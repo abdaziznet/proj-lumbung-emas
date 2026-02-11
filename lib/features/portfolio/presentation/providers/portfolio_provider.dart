@@ -127,8 +127,8 @@ class PortfolioNotifier extends StateNotifier<PortfolioState> {
               }
             }
             
-            if (latestPrice != null && latestPrice.buyPrice > 0) {
-              return asset.withCurrentPrice(latestPrice.buyPrice);
+            if (latestPrice != null && latestPrice.sellPrice > 0) {
+              return asset.withCurrentPrice(latestPrice.sellPrice);
             }
             return asset;
           }).toList();

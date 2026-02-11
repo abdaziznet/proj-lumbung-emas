@@ -6,11 +6,15 @@ import 'package:lumbungemas/features/portfolio/domain/entities/metal_asset.dart'
 class AssetItemCard extends StatelessWidget {
   final MetalAsset asset;
   final VoidCallback? onTap;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const AssetItemCard({
     super.key,
     required this.asset,
     this.onTap,
+    this.onEdit,
+    this.onDelete,
   });
 
   @override
@@ -36,8 +40,8 @@ class AssetItemCard extends StatelessWidget {
                 height: 56,
                 decoration: BoxDecoration(
                   color: asset.metalType.apiValue == 'GOLD'
-                      ? AppColors.primary.withOpacity(0.1)
-                      : Colors.blueGrey.withOpacity(0.1),
+                      ? AppColors.primary.withValues(alpha: 0.1)
+                      : Colors.blueGrey.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Center(
@@ -52,7 +56,7 @@ class AssetItemCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 16),
-              
+
               // Info
               Expanded(
                 child: Column(
@@ -67,7 +71,7 @@ class AssetItemCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${asset.weightGram} gram',
+                      '${_formatWeight(asset.weightGram)} gram',
                       style: const TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 14,
@@ -76,7 +80,7 @@ class AssetItemCard extends StatelessWidget {
                   ],
                 ),
               ),
-              
+
               // Value info
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -102,10 +106,45 @@ class AssetItemCard extends StatelessWidget {
                     ),
                 ],
               ),
+              if (onEdit != null || onDelete != null)
+                PopupMenuButton<String>(
+                  icon: const Icon(
+                    Icons.more_vert,
+                    color: AppColors.textSecondary,
+                  ),
+                  onSelected: (value) {
+                    if (value == 'edit') {
+                      onEdit?.call();
+                    } else if (value == 'delete') {
+                      onDelete?.call();
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    if (onEdit != null)
+                      const PopupMenuItem<String>(
+                        value: 'edit',
+                        child: Text('Edit'),
+                      ),
+                    if (onDelete != null)
+                      const PopupMenuItem<String>(
+                        value: 'delete',
+                        child: Text('Delete'),
+                      ),
+                  ],
+                ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  String _formatWeight(double value) {
+    if (value % 1 == 0) {
+      return value.toInt().toString();
+    }
+
+    final text = value.toStringAsFixed(2);
+    return text.replaceFirst(RegExp(r'\.?0+$'), '');
   }
 }

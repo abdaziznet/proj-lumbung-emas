@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lumbungemas/core/theme/app_colors.dart';
 import 'package:lumbungemas/features/auth/presentation/providers/auth_provider.dart';
@@ -17,10 +18,7 @@ class LoginScreen extends ConsumerWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primary.withOpacity(0.2),
-              AppColors.background,
-            ],
+            colors: [AppColors.primary.withOpacity(0.2), AppColors.background],
           ),
         ),
         child: SafeArea(
@@ -44,33 +42,33 @@ class LoginScreen extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  child: const Icon(
-                    Icons.savings_outlined,
-                    size: 80,
-                    color: AppColors.primary,
+                  child: SvgPicture.asset(
+                    'assets/icons/gold.svg',
+                    width: 80,
+                    height: 80,
                   ),
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Welcome Text
                 Text(
-                  'LumbungEmas',
+                  'Lumbung Emas',
                   style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.secondary,
-                      ),
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.secondary,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Investasi Emas & Perak dengan Bijak',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+                    color: AppColors.textSecondary,
+                  ),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const Spacer(),
-                
+
                 // Login Card
                 Card(
                   elevation: 0,
@@ -80,17 +78,18 @@ class LoginScreen extends ConsumerWidget {
                       children: [
                         Text(
                           'Mulai Perjalanan Investasimu',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 24),
-                        
+
                         // Google Sign In Button
                         ElevatedButton.icon(
                           onPressed: state.isLoading
                               ? null
-                              : () => ref.read(authProvider.notifier).signInWithGoogle(),
+                              : () => ref
+                                    .read(authProvider.notifier)
+                                    .signInWithGoogle(),
                           icon: state.isLoading
                               ? const SizedBox(
                                   width: 20,
@@ -101,20 +100,25 @@ class LoginScreen extends ConsumerWidget {
                                   ),
                                 )
                               : const Icon(Icons.login),
-                          label: Text(state.isLoading
-                              ? 'Menghubungkan...'
-                              : 'Masuk dengan Google'),
+                          label: Text(
+                            state.isLoading
+                                ? 'Menghubungkan...'
+                                : 'Masuk dengan Google',
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.secondary,
                             foregroundColor: Colors.white,
                           ),
                         ),
-                        
+
                         if (state.error != null) ...[
                           const SizedBox(height: 16),
                           Text(
                             state.error!,
-                            style: const TextStyle(color: AppColors.error, fontSize: 12),
+                            style: const TextStyle(
+                              color: AppColors.error,
+                              fontSize: 12,
+                            ),
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -122,15 +126,15 @@ class LoginScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 48),
-                
+
                 // Footer
                 Text(
                   'Amankan masa depan finansialmu\nhari ini.',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: Colors.grey),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),

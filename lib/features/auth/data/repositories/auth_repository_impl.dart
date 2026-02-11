@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:lumbungemas/core/errors/exceptions.dart';
 import 'package:lumbungemas/core/errors/failures.dart';
 import 'package:lumbungemas/features/auth/data/datasources/auth_remote_datasource.dart';
@@ -18,6 +19,8 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final userModel = await _remoteDataSource.signInWithGoogle();
       return Right(userModel.toEntity());
+    } on FirebaseAuthException catch (e) {
+      return Left(AuthFailure(message: e.message ?? 'Authentication failed', code: e.code));
     } on AuthException catch (e) {
       return Left(AuthFailure(message: e.message));
     } catch (e) {

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:lumbungemas/firebase_options.dart';
 import 'package:lumbungemas/core/config/app_config.dart';
+import 'package:lumbungemas/core/services/notification_service.dart';
 import 'package:lumbungemas/test_firebase_connection.dart';
 import 'package:lumbungemas/test_sheets_connection.dart';
 import 'package:lumbungemas/app.dart';
@@ -21,10 +21,12 @@ void main() async {
     print('✅ Configuration validated');
 
     // Initialize Firebase
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    await Firebase.initializeApp();
     print('✅ Firebase initialized');
+
+    // Initialize local notifications
+    await NotificationService.instance.initialize();
+    print('✅ Notification service initialized');
 
     runApp(const ProviderScope(child: LumbungEmasApp()));
   } catch (e) {
@@ -57,7 +59,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Lumbung Emas'),
+        title: const Text('LumbungEmas'),
         backgroundColor: Colors.amber,
         elevation: 2,
       ),
@@ -74,17 +76,13 @@ class HomeScreen extends StatelessWidget {
                   color: Colors.amber.shade100,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.savings,
-                  color: Colors.amber,
-                  size: 64,
-                ),
+                child: const Icon(Icons.savings, color: Colors.amber, size: 64),
               ),
               const SizedBox(height: 24),
 
               // App Title
               const Text(
-                'LumbungEmas',
+                'Lumbung Emas',
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
@@ -96,10 +94,7 @@ class HomeScreen extends StatelessWidget {
               // Subtitle
               const Text(
                 'Aplikasi Manajemen Investasi Emas & Perak',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 16, color: Colors.grey),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 48),
@@ -130,10 +125,7 @@ class HomeScreen extends StatelessWidget {
                           ),
                           Text(
                             'Ready for testing',
-                            style: TextStyle(
-                              color: Colors.grey,
-                              fontSize: 12,
-                            ),
+                            style: TextStyle(color: Colors.grey, fontSize: 12),
                           ),
                         ],
                       ),
@@ -146,10 +138,7 @@ class HomeScreen extends StatelessWidget {
               // Test Buttons
               const Text(
                 'Test Connections',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
 
@@ -161,7 +150,8 @@ class HomeScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const TestFirebaseConnectionScreen(),
+                        builder: (context) =>
+                            const TestFirebaseConnectionScreen(),
                       ),
                     );
                   },
@@ -188,7 +178,8 @@ class HomeScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const TestSheetsConnectionScreen(),
+                        builder: (context) =>
+                            const TestSheetsConnectionScreen(),
                       ),
                     );
                   },
@@ -210,10 +201,7 @@ class HomeScreen extends StatelessWidget {
               // Info Text
               const Text(
                 'Klik tombol di atas untuk test koneksi',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: Colors.grey, fontSize: 14),
               ),
             ],
           ),
@@ -238,18 +226,11 @@ class ErrorApp extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.error_outline,
-                  color: Colors.red,
-                  size: 64,
-                ),
+                const Icon(Icons.error_outline, color: Colors.red, size: 64),
                 const SizedBox(height: 24),
                 const Text(
                   'Configuration Error',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
                 Text(

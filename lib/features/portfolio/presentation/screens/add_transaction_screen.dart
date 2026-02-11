@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:lumbungemas/core/constants/app_constants.dart';
 import 'package:lumbungemas/core/theme/app_colors.dart';
+import 'package:lumbungemas/core/utils/validators.dart';
 import 'package:lumbungemas/features/auth/presentation/providers/auth_provider.dart';
 import 'package:lumbungemas/features/portfolio/domain/entities/metal_asset.dart';
 import 'package:lumbungemas/features/portfolio/presentation/providers/portfolio_provider.dart';
 import 'package:uuid/uuid.dart';
 
 class AddTransactionScreen extends ConsumerStatefulWidget {
-  const AddTransactionScreen({super.key});
+  final MetalAsset? editingAsset;
+
+  const AddTransactionScreen({
+    super.key,
+    this.editingAsset,
+  });
 
   @override
   ConsumerState<AddTransactionScreen> createState() => _AddTransactionScreenState();
@@ -24,6 +31,29 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   final _priceController = TextEditingController();
   final _notesController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
+
+  double? _parseRupiah(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    final digitsOnly = value.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digitsOnly.isEmpty) return null;
+    return double.tryParse(digitsOnly);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    final editingAsset = widget.editingAsset;
+    if (editingAsset == null) return;
+
+    _selectedBrand = editingAsset.brand;
+    _selectedMetal = editingAsset.metalType;
+    _selectedDate = editingAsset.purchaseDate;
+    _weightController.text = editingAsset.weightGram.toString();
+    _priceController.text = NumberFormat.decimalPattern(
+      'id_ID',
+    ).format(editingAsset.totalPurchaseValue.toInt());
+    _notesController.text = editingAsset.notes ?? '';
+  }
 
   @override
   void dispose() {
@@ -52,12 +82,21 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       final user = ref.read(currentUserProvider);
       if (user == null) return;
 
-      final weight = double.parse(_weightController.text);
-      final priceTotal = double.parse(_priceController.text);
+      final weight = double.tryParse(_weightController.text);
+      final priceTotal = _parseRupiah(_priceController.text);
+
+      if (weight == null || weight <= 0 || priceTotal == null || priceTotal <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Input berat/harga tidak valid')),
+        );
+        return;
+      }
+
       final pricePerGram = priceTotal / weight;
+      final editingAsset = widget.editingAsset;
 
       final asset = MetalAsset(
-        transactionId: const Uuid().v4(),
+        transactionId: editingAsset?.transactionId ?? const Uuid().v4(),
         userId: user.userId,
         brand: _selectedBrand,
         metalType: _selectedMetal,
@@ -65,16 +104,26 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         purchasePricePerGram: pricePerGram,
         totalPurchaseValue: priceTotal,
         purchaseDate: _selectedDate,
-        notes: _notesController.text,
-        createdAt: DateTime.now(),
+        notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+        createdAt: editingAsset?.createdAt ?? DateTime.now(),
         updatedAt: DateTime.now(),
       );
 
-      ref.read(portfolioProvider.notifier).addTransaction(asset).then((_) {
+      final action = editingAsset == null
+          ? ref.read(portfolioProvider.notifier).addTransaction(asset)
+          : ref.read(portfolioProvider.notifier).updateTransaction(asset);
+
+      action.then((_) {
         if (mounted) {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Transaksi berhasil ditambahkan!')),
+            SnackBar(
+              content: Text(
+                editingAsset == null
+                    ? 'Transaksi berhasil ditambahkan!'
+                    : 'Transaksi berhasil diperbarui!',
+              ),
+            ),
           );
         }
       });
@@ -84,10 +133,11 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   @override
   Widget build(BuildContext context) {
     final isLoading = ref.watch(portfolioProvider).isLoading;
+    final isEditMode = widget.editingAsset != null;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tambah Transaksi'),
+        title: Text(isEditMode ? 'Edit Transaksi' : 'Tambah Transaksi'),
         backgroundColor: Colors.white,
         elevation: 0,
         foregroundColor: AppColors.secondary,
@@ -115,7 +165,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               const Text('Brand', style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: _selectedBrand,
+                initialValue: _selectedBrand,
                 items: AppConstants.supportedBrands
                     .map((b) => DropdownMenuItem(value: b, child: Text(b)))
                     .toList(),
@@ -131,7 +181,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 controller: _weightController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: const InputDecoration(hintText: 'Contoh: 5.0'),
-                validator: (val) => (val == null || val.isEmpty) ? 'Wajib diisi' : null,
+                validator: Validators.weight,
               ),
               const SizedBox(height: 24),
 
@@ -141,8 +191,22 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               TextFormField(
                 controller: _priceController,
                 keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  RupiahTextInputFormatter(),
+                ],
                 decoration: const InputDecoration(hintText: 'Contoh: 5000000'),
-                validator: (val) => (val == null || val.isEmpty) ? 'Wajib diisi' : null,
+                validator: (val) {
+                  final parsedPrice = _parseRupiah(val);
+                  if (parsedPrice == null) return 'Wajib diisi';
+                  if (parsedPrice < AppConstants.minPrice) {
+                    return 'Price must be at least Rp ${AppConstants.minPrice}';
+                  }
+                  if (parsedPrice > AppConstants.maxPrice) {
+                    return 'Price seems unrealistic';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 24),
 
@@ -184,7 +248,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 onPressed: isLoading ? null : _submit,
                 child: isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Simpan Transaksi'),
+                    : Text(isEditMode ? 'Update Transaksi' : 'Simpan Transaksi'),
               ),
             ],
           ),
@@ -223,6 +287,29 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class RupiahTextInputFormatter extends TextInputFormatter {
+  final NumberFormat _formatter = NumberFormat.decimalPattern('id_ID');
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digitsOnly = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digitsOnly.isEmpty) {
+      return const TextEditingValue(text: '');
+    }
+
+    final number = int.parse(digitsOnly);
+    final newText = _formatter.format(number);
+
+    return TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newText.length),
     );
   }
 }

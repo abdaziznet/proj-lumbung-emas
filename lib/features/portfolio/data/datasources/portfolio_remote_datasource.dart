@@ -48,7 +48,7 @@ class PortfolioRemoteDataSourceImpl implements PortfolioRemoteDataSource {
     if (rowIndex == null) return null;
 
     final rows = await _sheetsService.read(
-      '${AppConstants.sheetPortfolioSummary}!A$rowIndex:H$rowIndex',
+      '${AppConstants.sheetPortfolioSummary}!A$rowIndex:I$rowIndex',
     );
 
     if (rows.isEmpty) return null;

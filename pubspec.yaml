@@ -60,7 +60,7 @@ dependencies:
   flutter_dotenv: ^5.1.0
 
   # Notifications
-  # flutter_local_notifications: ^16.3.0
+  flutter_local_notifications: ^19.4.2
 
   # Connectivity
   connectivity_plus: ^5.0.2

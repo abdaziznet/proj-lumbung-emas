@@ -12,6 +12,8 @@ class AuthState {
   final bool isLoading;
   final String? error;
 
+  static const Object _noChange = Object();
+
   AuthState({
     this.user,
     this.isLoading = false,
@@ -19,14 +21,14 @@ class AuthState {
   });
 
   AuthState copyWith({
-    UserEntity? user,
+    Object? user = _noChange,
     bool? isLoading,
-    String? error,
+    Object? error = _noChange,
   }) {
     return AuthState(
-      user: user ?? this.user,
+      user: identical(user, _noChange) ? this.user : user as UserEntity?,
       isLoading: isLoading ?? this.isLoading,
-      error: error ?? this.error,
+      error: identical(error, _noChange) ? this.error : error as String?,
     );
   }
 }

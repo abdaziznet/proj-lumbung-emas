@@ -20,17 +20,27 @@ class PricingRemoteDataSourceImpl implements PricingRemoteDataSource {
   @override
   Future<List<DailyPriceModel>> getCurrentPrices() async {
     final rows = await _sheetsService.read('${AppConstants.sheetDailyPrices}!A:H');
-    
-    // Skip header and map to models
-    if (rows.length <= 1) return [];
-    
-    // We usually want the most recent prices per brand/metal type
-    // For now, just return all rows (logic to filter for latest can be in repo or here)
-    return rows
-        .skip(1)
-        .where((row) => row.isNotEmpty)
-        .map((row) => DailyPriceModel.fromSheetRow(row))
-        .toList();
+
+    if (rows.isEmpty) return [];
+
+    final result = <DailyPriceModel>[];
+    for (final row in rows) {
+      if (row.isEmpty) continue;
+
+      // Skip header row if present
+      final firstCell = row.first.toString().trim().toLowerCase();
+      if (firstCell == 'price_id') continue;
+
+      try {
+        final model = DailyPriceModel.fromSheetRow(row);
+        if (model.brand.trim().isEmpty) continue;
+        result.add(model);
+      } catch (_) {
+        // Skip malformed rows, keep remaining valid data
+      }
+    }
+
+    return result;
   }
 
   @override

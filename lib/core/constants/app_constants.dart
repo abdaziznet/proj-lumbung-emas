@@ -15,8 +15,7 @@ class AppConstants {
     'Antam',
     'UBS',
     'EmasKu',
-    'Pegadaian',
-    'Custom',
+    'Galeri 24',
   ];
 
   // Currency
@@ -56,7 +55,7 @@ class AppConstants {
     // For now, return placeholder to avoid import cycle
     return 'CONFIGURE_IN_ENV_FILE';
   }
-  
+
   static const String usersSheetName = 'Users';
   static const String transactionsSheetName = 'Transactions';
   static const String dailyPricesSheetName = 'Daily_Prices';
@@ -128,8 +127,7 @@ enum Brand {
   antam,
   ubs,
   emasku,
-  pegadaian,
-  custom;
+  galeri24;
 
   String get displayName {
     switch (this) {
@@ -139,10 +137,8 @@ enum Brand {
         return 'UBS';
       case Brand.emasku:
         return 'EmasKu';
-      case Brand.pegadaian:
-        return 'Pegadaian';
-      case Brand.custom:
-        return 'Custom';
+      case Brand.galeri24:
+        return 'Galeri 24';
     }
   }
 
@@ -154,12 +150,10 @@ enum Brand {
         return Brand.ubs;
       case 'emasku':
         return Brand.emasku;
-      case 'pegadaian':
-        return Brand.pegadaian;
-      case 'custom':
-        return Brand.custom;
+      case 'galeri 24':
+        return Brand.galeri24;
       default:
-        return Brand.custom;
+        return Brand.antam;
     }
   }
 }
