@@ -18,7 +18,10 @@ class LoginScreen extends ConsumerWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.primary.withOpacity(0.2), AppColors.background],
+            colors: [
+              AppColors.primary.withValues(alpha: 0.2),
+              AppColors.background,
+            ],
           ),
         ),
         child: SafeArea(
@@ -36,7 +39,7 @@ class LoginScreen extends ConsumerWidget {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primary.withOpacity(0.2),
+                        color: AppColors.primary.withValues(alpha: 0.2),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
@@ -52,7 +55,7 @@ class LoginScreen extends ConsumerWidget {
 
                 // Welcome Text
                 Text(
-                  'Lumbung Emas',
+                  'Lumbung Emasku',
                   style: Theme.of(context).textTheme.displaySmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: AppColors.secondary,

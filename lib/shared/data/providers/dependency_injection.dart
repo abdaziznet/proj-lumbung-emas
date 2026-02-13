@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:logger/logger.dart';
 import 'package:lumbungemas/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:lumbungemas/features/auth/data/repositories/auth_repository_impl.dart';
@@ -19,16 +18,10 @@ final loggerProvider = Provider<Logger>((ref) {
   return Logger();
 });
 
-/// Secure storage provider
-final secureStorageProvider = Provider<FlutterSecureStorage>((ref) {
-  return const FlutterSecureStorage();
-});
-
 /// Google Sheets service provider
 final googleSheetsServiceProvider = Provider<GoogleSheetsService>((ref) {
   return GoogleSheetsService(
     googleSignIn: ref.watch(googleSignInProvider),
-    secureStorage: ref.watch(secureStorageProvider),
     logger: ref.watch(loggerProvider),
   );
 });

@@ -1,4 +1,5 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/foundation.dart';
 
 /// Application configuration loaded from environment variables
 class AppConfig {
@@ -84,12 +85,12 @@ class AppConfig {
   static void printConfig() {
     if (!isDebugLoggingEnabled) return;
 
-    print('=== App Configuration ===');
-    print('Environment: $environment');
-    print('Spreadsheet ID: ${spreadsheetId.substring(0, 10)}...');
-    print('Analytics: $isAnalyticsEnabled');
-    print('Crash Reporting: $isCrashReportingEnabled');
-    print('Debug Logging: $isDebugLoggingEnabled');
-    print('========================');
+    debugPrint('=== App Configuration ===');
+    debugPrint('Environment: $environment');
+    debugPrint('Spreadsheet ID: ${spreadsheetId.substring(0, 10)}...');
+    debugPrint('Analytics: $isAnalyticsEnabled');
+    debugPrint('Crash Reporting: $isCrashReportingEnabled');
+    debugPrint('Debug Logging: $isDebugLoggingEnabled');
+    debugPrint('========================');
   }
 }

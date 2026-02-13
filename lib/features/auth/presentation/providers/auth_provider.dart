@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lumbungemas/core/services/notification_service.dart';
 import 'package:lumbungemas/features/auth/domain/entities/user_entity.dart';
 import 'package:lumbungemas/features/auth/domain/repositories/auth_repository.dart';
 import 'package:lumbungemas/features/auth/domain/usecases/get_current_user.dart';
@@ -52,6 +53,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     // Listen to auth state changes
     authRepository.authStateChanges().listen((user) {
       state = state.copyWith(user: user, isLoading: false);
+      if (user != null) {
+        Future.microtask(() async {
+          await NotificationService.instance.showPriceUpdateReminderIfNeeded();
+        });
+      }
     });
   }
 
@@ -67,9 +73,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> signInWithGoogle() async {
     state = state.copyWith(isLoading: true, error: null);
     final result = await _signInWithGoogleUseCase();
-    result.fold(
-      (failure) => state = state.copyWith(isLoading: false, error: failure.message),
-      (user) => state = state.copyWith(isLoading: false, user: user),
+    await result.fold(
+      (failure) async {
+        state = state.copyWith(isLoading: false, error: failure.message);
+      },
+      (user) async {
+        state = state.copyWith(isLoading: false, user: user);
+        await NotificationService.instance.showPriceUpdateReminderIfNeeded();
+      },
     );
   }
 

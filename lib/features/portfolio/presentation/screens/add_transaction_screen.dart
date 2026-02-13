@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:lumbungemas/core/constants/app_constants.dart';
 import 'package:lumbungemas/core/theme/app_colors.dart';
@@ -154,9 +155,17 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  _buildMetalToggle(MetalType.gold, 'Emas', Icons.workspace_premium),
+                  _buildMetalToggle(
+                    MetalType.gold,
+                    'Emas',
+                    'assets/images/ic-gold.svg',
+                  ),
                   const SizedBox(width: 12),
-                  _buildMetalToggle(MetalType.silver, 'Perak', Icons.circle),
+                  _buildMetalToggle(
+                    MetalType.silver,
+                    'Perak',
+                    'assets/images/ic-silver.svg',
+                  ),
                 ],
               ),
               const SizedBox(height: 24),
@@ -167,7 +176,15 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               DropdownButtonFormField<String>(
                 initialValue: _selectedBrand,
                 items: AppConstants.supportedBrands
-                    .map((b) => DropdownMenuItem(value: b, child: Text(b)))
+                    .map(
+                      (b) => DropdownMenuItem(
+                        value: b,
+                        child: _buildBrandOption(b),
+                      ),
+                    )
+                    .toList(),
+                selectedItemBuilder: (context) => AppConstants.supportedBrands
+                    .map((b) => _buildBrandOption(b))
                     .toList(),
                 onChanged: (val) => setState(() => _selectedBrand = val!),
                 decoration: const InputDecoration(hintText: 'Pilih Brand'),
@@ -257,29 +274,48 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     );
   }
 
-  Widget _buildMetalToggle(MetalType type, String label, IconData icon) {
+  Widget _buildMetalToggle(MetalType type, String label, String iconAsset) {
     final isSelected = _selectedMetal == type;
+    final backgroundColor = type == MetalType.gold
+        ? (isSelected ? const Color(0xFFD4AF37) : const Color(0xFFFFF4CC))
+        : (isSelected ? const Color(0xFF9AA0A6) : const Color(0xFFF1F3F5));
+    final borderColor = type == MetalType.gold
+        ? (isSelected ? const Color(0xFFB8860B) : const Color(0xFFE5D08F))
+        : (isSelected ? const Color(0xFF7B8188) : const Color(0xFFD8DDE1));
+    final foregroundColor = isSelected
+        ? Colors.white
+        : (type == MetalType.gold
+            ? const Color(0xFF8A6A1A)
+            : const Color(0xFF5F6670));
+
     return Expanded(
       child: InkWell(
         onTap: () => setState(() => _selectedMetal = type),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.secondary : Colors.white,
+            color: backgroundColor,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isSelected ? AppColors.secondary : Colors.grey.shade200,
+              color: borderColor,
             ),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: isSelected ? Colors.white : Colors.grey),
+              SizedBox(
+                width: 18,
+                height: 18,
+                child: SvgPicture.asset(
+                  iconAsset,
+                  fit: BoxFit.contain,
+                ),
+              ),
               const SizedBox(width: 8),
               Text(
                 label,
                 style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.grey,
+                  color: foregroundColor,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -288,6 +324,56 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildBrandOption(String brand) {
+    final logoPath = _brandLogoPath(brand);
+    if (logoPath == null) {
+      return Text(brand);
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 24,
+          height: 24,
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: SvgPicture.asset(
+            logoPath,
+            fit: BoxFit.contain,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          brand,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
+
+  String? _brandLogoPath(String brand) {
+    final normalized = brand.trim().toLowerCase();
+    switch (normalized) {
+      case 'antam':
+        return 'assets/images/antam-logo.svg';
+      case 'ubs':
+        return 'assets/images/ubs-logo.svg';
+      case 'emasku':
+        return 'assets/images/emasku-logo.svg';
+      case 'galeri 24':
+      case 'galeri24':
+        return 'assets/images/galeri24.svg';
+      case 'bsi':
+        return 'assets/images/bsi-logo.svg';
+      default:
+        return null;
+    }
   }
 }
 

@@ -1,10 +1,8 @@
 import 'package:googleapis/sheets/v4.dart' as sheets;
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:lumbungemas/core/config/app_config.dart';
-import 'package:lumbungemas/core/constants/app_constants.dart';
 import 'package:lumbungemas/core/config/service_account_config.dart';
 import 'package:lumbungemas/core/errors/exceptions.dart';
 import 'package:logger/logger.dart';
@@ -13,7 +11,6 @@ import 'package:logger/logger.dart';
 /// This service handles all interactions with Google Sheets as the primary database
 class GoogleSheetsService {
   final GoogleSignIn _googleSignIn;
-  final FlutterSecureStorage _secureStorage;
   final Logger _logger;
 
   sheets.SheetsApi? _sheetsApi;
@@ -21,10 +18,8 @@ class GoogleSheetsService {
 
   GoogleSheetsService({
     required GoogleSignIn googleSignIn,
-    required FlutterSecureStorage secureStorage,
     required Logger logger,
   })  : _googleSignIn = googleSignIn,
-        _secureStorage = secureStorage,
         _logger = logger {
     _spreadsheetId = AppConfig.spreadsheetId;
   }
@@ -364,6 +359,43 @@ class GoogleSheetsService {
       throw SheetsException(
         message: 'Failed to get sheet names',
         code: 'GET_SHEETS_ERROR',
+        details: e,
+      );
+    }
+  }
+
+  /// Ensure a sheet exists. Optionally writes header row when creating.
+  Future<void> ensureSheetExists(
+    String sheetName, {
+    List<Object?>? headers,
+  }) async {
+    try {
+      _ensureInitialized();
+
+      final sheetNames = await getSheetNames();
+      if (sheetNames.contains(sheetName)) return;
+
+      final request = sheets.BatchUpdateSpreadsheetRequest(
+        requests: [
+          sheets.Request(
+            addSheet: sheets.AddSheetRequest(
+              properties: sheets.SheetProperties(title: sheetName),
+            ),
+          ),
+        ],
+      );
+
+      await _sheetsApi!.spreadsheets.batchUpdate(request, _spreadsheetId!);
+      _logger.i('Sheet created: $sheetName');
+
+      if (headers != null && headers.isNotEmpty) {
+        await write('$sheetName!A1', [headers]);
+      }
+    } catch (e) {
+      _logger.e('Failed to ensure sheet exists: $sheetName', error: e);
+      throw SheetsException(
+        message: 'Failed to prepare sheet: $sheetName',
+        code: 'ENSURE_SHEET_ERROR',
         details: e,
       );
     }

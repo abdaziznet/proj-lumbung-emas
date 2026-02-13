@@ -59,12 +59,14 @@ class AppConstants {
   static const String usersSheetName = 'Users';
   static const String transactionsSheetName = 'Transactions';
   static const String dailyPricesSheetName = 'Daily_Prices';
+  static const String priceTickersSheetName = 'Price_Tickers';
   static const String portfolioSummarySheetName = 'Portfolio_Summary';
 
   // Aliases for shorter access
   static const String sheetUsers = usersSheetName;
   static const String sheetTransactions = transactionsSheetName;
   static const String sheetDailyPrices = dailyPricesSheetName;
+  static const String sheetPriceTickers = priceTickersSheetName;
   static const String sheetPortfolioSummary = portfolioSummarySheetName;
 
   // Notification Channels

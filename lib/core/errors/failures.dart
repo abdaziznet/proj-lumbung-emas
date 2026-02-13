@@ -22,89 +22,89 @@ abstract class Failure extends Equatable {
 /// Server-related failures
 class ServerFailure extends Failure {
   const ServerFailure({
-    String message = 'Server error occurred',
-    String? code,
-    dynamic details,
-  }) : super(message: message, code: code, details: details);
+    super.message = 'Server error occurred',
+    super.code,
+    super.details,
+  });
 }
 
 /// Cache-related failures
 class CacheFailure extends Failure {
   const CacheFailure({
-    String message = 'Cache error occurred',
-    String? code,
-    dynamic details,
-  }) : super(message: message, code: code, details: details);
+    super.message = 'Cache error occurred',
+    super.code,
+    super.details,
+  });
 }
 
 /// Network-related failures
 class NetworkFailure extends Failure {
   const NetworkFailure({
-    String message = 'No internet connection',
-    String? code,
-    dynamic details,
-  }) : super(message: message, code: code, details: details);
+    super.message = 'No internet connection',
+    super.code,
+    super.details,
+  });
 }
 
 /// Authentication failures
 class AuthFailure extends Failure {
   const AuthFailure({
-    String message = 'Authentication failed',
-    String? code,
-    dynamic details,
-  }) : super(message: message, code: code, details: details);
+    super.message = 'Authentication failed',
+    super.code,
+    super.details,
+  });
 }
 
 /// Validation failures
 class ValidationFailure extends Failure {
   const ValidationFailure({
-    required String message,
-    String? code,
-    dynamic details,
-  }) : super(message: message, code: code, details: details);
+    required super.message,
+    super.code,
+    super.details,
+  });
 }
 
 /// Google Sheets API failures
 class SheetsFailure extends Failure {
   const SheetsFailure({
-    String message = 'Google Sheets operation failed',
-    String? code,
-    dynamic details,
-  }) : super(message: message, code: code, details: details);
+    super.message = 'Google Sheets operation failed',
+    super.code,
+    super.details,
+  });
 }
 
 /// Permission failures
 class PermissionFailure extends Failure {
   const PermissionFailure({
-    String message = 'Permission denied',
-    String? code,
-    dynamic details,
-  }) : super(message: message, code: code, details: details);
+    super.message = 'Permission denied',
+    super.code,
+    super.details,
+  });
 }
 
 /// Not found failures
 class NotFoundFailure extends Failure {
   const NotFoundFailure({
-    String message = 'Resource not found',
-    String? code,
-    dynamic details,
-  }) : super(message: message, code: code, details: details);
+    super.message = 'Resource not found',
+    super.code,
+    super.details,
+  });
 }
 
 /// Sync failures
 class SyncFailure extends Failure {
   const SyncFailure({
-    String message = 'Synchronization failed',
-    String? code,
-    dynamic details,
-  }) : super(message: message, code: code, details: details);
+    super.message = 'Synchronization failed',
+    super.code,
+    super.details,
+  });
 }
 
 /// Unknown failures
 class UnknownFailure extends Failure {
   const UnknownFailure({
-    String message = 'An unknown error occurred',
-    String? code,
-    dynamic details,
-  }) : super(message: message, code: code, details: details);
+    super.message = 'An unknown error occurred',
+    super.code,
+    super.details,
+  });
 }

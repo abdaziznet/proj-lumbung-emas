@@ -4,11 +4,10 @@ import 'package:lumbungemas/core/config/app_config.dart';
 import 'package:lumbungemas/core/config/service_account_config.dart';
 import 'package:lumbungemas/shared/data/services/google_sheets_service.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:logger/logger.dart';
 
 class TestSheetsConnectionScreen extends ConsumerStatefulWidget {
-  const TestSheetsConnectionScreen({Key? key}) : super(key: key);
+  const TestSheetsConnectionScreen({super.key});
 
   @override
   ConsumerState<TestSheetsConnectionScreen> createState() =>
@@ -60,7 +59,6 @@ class _TestSheetsConnectionScreenState
         googleSignIn: GoogleSignIn(
           scopes: ['https://www.googleapis.com/auth/spreadsheets'],
         ),
-        secureStorage: const FlutterSecureStorage(),
         logger: _logger,
       );
 

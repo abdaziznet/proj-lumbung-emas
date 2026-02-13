@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import 'package:lumbungemas/core/constants/app_constants.dart';
 
 /// Portfolio summary entity with aggregated statistics
 class PortfolioSummary extends Equatable {

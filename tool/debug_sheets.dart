@@ -4,14 +4,14 @@ import 'package:googleapis/sheets/v4.dart';
 import 'package:googleapis_auth/auth_io.dart';
 
 void main() async {
-  print('🔍 Starting Debug Script...');
-  print('----------------------------------------------------------------');
+  stdout.writeln('🔍 Starting Debug Script...');
+  stdout.writeln('----------------------------------------------------------------');
 
   // 1. Get Spreadsheet ID from .env manually
   String? spreadsheetId;
   final envFile = File('.env');
   if (!envFile.existsSync()) {
-    print('❌ Error: .env file not found!');
+    stdout.writeln('❌ Error: .env file not found!');
     return;
   }
   
@@ -31,77 +31,77 @@ void main() async {
   }
 
   if (spreadsheetId == null || spreadsheetId.isEmpty) {
-    print('❌ Error: GOOGLE_SHEETS_SPREADSHEET_ID not found in .env');
+    stdout.writeln('❌ Error: GOOGLE_SHEETS_SPREADSHEET_ID not found in .env');
     return;
   }
 
-  print('📝 Spreadsheet ID loaded: $spreadsheetId');
+  stdout.writeln('📝 Spreadsheet ID loaded: $spreadsheetId');
 
   // 2. Load Service Account
   final credFile = File('credentials/service-account.json');
   if (!credFile.existsSync()) {
-    print('❌ Error: credentials/service-account.json not found!');
+    stdout.writeln('❌ Error: credentials/service-account.json not found!');
     return;
   }
 
   final credContent = credFile.readAsStringSync();
   final credJson = jsonDecode(credContent);
   final email = credJson['client_email'];
-  print('📧 Service Account: $email');
-  print('----------------------------------------------------------------');
+  stdout.writeln('📧 Service Account: $email');
+  stdout.writeln('----------------------------------------------------------------');
 
   // 3. Connect
   try {
-    print('🔄 Authenticating...');
+    stdout.writeln('🔄 Authenticating...');
     final credentials = ServiceAccountCredentials.fromJson(credJson);
     final scopes = [SheetsApi.spreadsheetsScope];
     final client = await clientViaServiceAccount(credentials, scopes);
     final api = SheetsApi(client);
 
-    print('✅ Authentication Successful!');
+    stdout.writeln('✅ Authentication Successful!');
 
     // 4. Test Access
-    print('🔄 Trying to access Spreadsheet...');
+    stdout.writeln('🔄 Trying to access Spreadsheet...');
     final spreadsheet = await api.spreadsheets.get(spreadsheetId);
     
-    print('\n🎉 SUCCESS! Connected to Spreadsheet: "${spreadsheet.properties?.title}"');
-    print('\n📋 Available Sheets (Tabs):');
+    stdout.writeln('\n🎉 SUCCESS! Connected to Spreadsheet: "${spreadsheet.properties?.title}"');
+    stdout.writeln('\n📋 Available Sheets (Tabs):');
     for (var sheet in spreadsheet.sheets!) {
-      print('   - "${sheet.properties?.title}"');
+      stdout.writeln('   - "${sheet.properties?.title}"');
     }
     
     // Check for required sheets
     final requiredSheets = ['Users', 'Transactions', 'Daily_Prices', 'Portfolio_Summary'];
-    print('\n🔍 Validation:');
+    stdout.writeln('\n🔍 Validation:');
     for (var req in requiredSheets) {
        bool found = spreadsheet.sheets!.any((s) => s.properties?.title == req);
        if (found) {
-         print('   ✅ Sheet "$req" found.');
+         stdout.writeln('   ✅ Sheet "$req" found.');
        } else {
-         print('   ❌ Sheet "$req" MISSING! (Case Sensitive)');
+         stdout.writeln('   ❌ Sheet "$req" MISSING! (Case Sensitive)');
        }
     }
     
-    print('\n✅ Jika semua checklist hijau, aplikasi Flutter Anda seharusnya berjalan lancar.');
+    stdout.writeln('\n✅ Jika semua checklist hijau, aplikasi Flutter Anda seharusnya berjalan lancar.');
 
   } catch (e) {
-    print('\n❌ CONNECTION FAILED:');
-    print(e);
+    stdout.writeln('\n❌ CONNECTION FAILED:');
+    stdout.writeln(e);
     
-    print('\n----------------------------------------------------------------');
+    stdout.writeln('\n----------------------------------------------------------------');
     if (e.toString().contains('404')) {
-      print('👉 DIAGNOSA: 404 Found');
-      print('   Artinya ID Spreadsheet salah atau Email Service Account belum di-invite.');
-      print('\n   SOLUSI:');
-      print('   1. Buka Spreadsheet di Browser.');
-      print('   2. Klik tombol SHARE.');
-      print('   3. Masukkan email ini sebagai EDITOR:');
-      print('      $email');
-      print('   4. Cek ulang ID di .env apakah sama dengan di URL Browser.');
+      stdout.writeln('👉 DIAGNOSA: 404 Found');
+      stdout.writeln('   Artinya ID Spreadsheet salah atau Email Service Account belum di-invite.');
+      stdout.writeln('\n   SOLUSI:');
+      stdout.writeln('   1. Buka Spreadsheet di Browser.');
+      stdout.writeln('   2. Klik tombol SHARE.');
+      stdout.writeln('   3. Masukkan email ini sebagai EDITOR:');
+      stdout.writeln('      $email');
+      stdout.writeln('   4. Cek ulang ID di .env apakah sama dengan di URL Browser.');
     } else if (e.toString().contains('403')) {
-      print('👉 DIAGNOSA: 403 Forbidden');
-      print('   Artinya API belum di-enable atau permission kurang.');
+      stdout.writeln('👉 DIAGNOSA: 403 Forbidden');
+      stdout.writeln('   Artinya API belum di-enable atau permission kurang.');
     }
-    print('----------------------------------------------------------------');
+    stdout.writeln('----------------------------------------------------------------');
   }
 }

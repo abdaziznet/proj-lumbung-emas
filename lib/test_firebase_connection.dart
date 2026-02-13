@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class TestFirebaseConnectionScreen extends StatefulWidget {
-  const TestFirebaseConnectionScreen({Key? key}) : super(key: key);
+  const TestFirebaseConnectionScreen({super.key});
 
   @override
   State<TestFirebaseConnectionScreen> createState() =>
@@ -62,9 +62,6 @@ class _TestFirebaseConnectionScreenState
       _addLog('');
       _addLog('📱 Step 3: Checking Google Sign-In...');
       
-      final googleSignIn = GoogleSignIn(
-        scopes: ['email', 'profile'],
-      );
       _addLog('✅ Google Sign-In configured');
 
       _addLog('');

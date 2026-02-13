@@ -1,41 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:lumbungemas/core/constants/app_constants.dart';
-import 'package:lumbungemas/core/services/notification_service.dart';
 import 'package:lumbungemas/core/theme/app_colors.dart';
 import 'package:lumbungemas/features/auth/presentation/providers/auth_provider.dart';
 import 'package:lumbungemas/features/portfolio/domain/entities/metal_asset.dart';
 import 'package:lumbungemas/features/portfolio/presentation/providers/portfolio_provider.dart';
 import 'package:lumbungemas/features/portfolio/presentation/screens/add_transaction_screen.dart';
+import 'package:lumbungemas/features/portfolio/presentation/screens/analytics_dashboard_screen.dart';
 import 'package:lumbungemas/features/portfolio/presentation/screens/all_assets_screen.dart';
 import 'package:lumbungemas/features/pricing/presentation/providers/pricing_provider.dart';
 import 'package:lumbungemas/shared/presentation/widgets/asset_item_card.dart';
 import 'package:lumbungemas/shared/presentation/widgets/summary_card.dart';
 
-final dashboardPriceReminderProvider = Provider<void>((ref) {
-  final user = ref.watch(currentUserProvider);
-  if (user == null) return;
-
-  Future.microtask(() async {
-    await NotificationService.instance.showPriceUpdateReminderIfNeeded();
-  });
-});
-
-class DashboardScreen extends ConsumerWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  static const List<_TickerItem> _defaultTickerItems = [
+    _TickerItem(brand: 'Antam', metalType: MetalType.gold),
+    _TickerItem(brand: 'UBS', metalType: MetalType.gold),
+    _TickerItem(brand: 'EmasKu', metalType: MetalType.gold),
+    _TickerItem(brand: 'Galeri 24', metalType: MetalType.gold),
+    _TickerItem(brand: 'Antam', metalType: MetalType.silver),
+  ];
+
+  final List<_TickerItem> _manualTickerItems = [];
+  bool _isAssetValueHidden = true;
 
   String _priceKey(String brand, MetalType metalType) {
     return '${brand.trim().toLowerCase()}_${metalType.apiValue.toLowerCase()}';
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(dashboardPriceReminderProvider);
+  Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
     final portfolioState = ref.watch(portfolioProvider);
     final pricingState = ref.watch(pricingProvider);
+    final displayedAssets = List<MetalAsset>.from(portfolioState.assets)
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final limitedAssets = displayedAssets.take(5).toList();
     final latestPriceByKey = <String, double>{};
     final latestSellByKey = <String, double>{};
     for (final price in pricingState.prices) {
@@ -45,10 +55,8 @@ class DashboardScreen extends ConsumerWidget {
     }
 
     final tickerItems = <_TickerItem>[
-      for (final brand in AppConstants.supportedBrands)
-        _TickerItem(brand: brand, metalType: MetalType.gold),
-      for (final brand in AppConstants.supportedBrands)
-        _TickerItem(brand: brand, metalType: MetalType.silver),
+      ..._defaultTickerItems,
+      ..._manualTickerItems,
     ];
 
     final currencyFormat = NumberFormat.currency(
@@ -140,19 +148,57 @@ class DashboardScreen extends ConsumerWidget {
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 24),
-                  itemCount: tickerItems.length,
+                  itemCount: tickerItems.length + 1,
                   separatorBuilder: (_, _) => const SizedBox(width: 12),
                   itemBuilder: (context, index) {
+                    if (index == tickerItems.length) {
+                      return SizedBox(
+                        width: 90,
+                        child: _buildAddTickerButton(
+                          context,
+                          onTap: () async {
+                            final newItem = await _showAddTickerDialog(context);
+                            if (newItem == null || !context.mounted) return;
+
+                            final exists = tickerItems.any(
+                              (item) =>
+                                  _priceKey(item.brand, item.metalType) ==
+                                  _priceKey(newItem.brand, newItem.metalType),
+                            );
+
+                            if (exists) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Ticker sudah ada'),
+                                ),
+                              );
+                              return;
+                            }
+
+                            setState(() {
+                              _manualTickerItems.add(newItem);
+                            });
+                          },
+                        ),
+                      );
+                    }
+
                     final item = tickerItems[index];
                     final key = _priceKey(item.brand, item.metalType);
                     final buyPrice = latestPriceByKey[key];
                     final sellPrice = latestSellByKey[key];
                     final style = _tickerStyleFor(index);
+                    final isDefaultItem = _defaultTickerItems.any(
+                      (defaultItem) =>
+                          _priceKey(defaultItem.brand, defaultItem.metalType) ==
+                          _priceKey(item.brand, item.metalType),
+                    );
 
                     return SizedBox(
                       width: 155,
                       child: _buildPriceTicker(
                         context,
+                        item.brand,
                         '${item.brand} ${item.metalType.displayName}',
                         sellPrice,
                         currencyFormat,
@@ -165,6 +211,9 @@ class DashboardScreen extends ConsumerWidget {
                           initialBuyPrice: buyPrice,
                           initialSellPrice: sellPrice,
                         ),
+                        onLongPress: isDefaultItem
+                            ? null
+                            : () => _confirmDeleteTicker(context, item),
                       ),
                     );
                   },
@@ -188,6 +237,12 @@ class DashboardScreen extends ConsumerWidget {
                       ),
                       isProfit: portfolioState.totalProfitLoss >= 0,
                       icon: Icons.account_balance_wallet_outlined,
+                      obscureValues: _isAssetValueHidden,
+                      onToggleObscure: () {
+                        setState(() {
+                          _isAssetValueHidden = !_isAssetValueHidden;
+                        });
+                      },
                     ),
                     const SizedBox(height: 24),
 
@@ -198,19 +253,21 @@ class DashboardScreen extends ConsumerWidget {
                           context,
                           'Total Emas',
                           '${_formatWeight(portfolioState.totalGoldWeight)} gram',
-                          Icons.workspace_premium,
-                          AppColors.primary,
+                          'assets/images/ic-gold.svg',
+                          AppColors.primaryDark,
                         ),
                         const SizedBox(width: 16),
                         _buildQuickStat(
                           context,
                           'Total Perak',
                           '${_formatWeight(portfolioState.totalSilverWeight)} gram',
-                          Icons.circle,
-                          Colors.blueGrey,
+                          'assets/images/ic-silver.svg',
+                          const Color(0xFF6B7280),
                         ),
                       ],
                     ),
+                    const SizedBox(height: 16),
+                    _buildAnalyticsMenu(context),
                     const SizedBox(height: 32),
 
                     // Section Title
@@ -292,13 +349,13 @@ class DashboardScreen extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate((context, index) {
-                    final asset = portfolioState.assets[index];
+                    final asset = limitedAssets[index];
                     return AssetItemCard(
                       asset: asset,
                       onEdit: () => _editAsset(context, ref, asset),
                       onDelete: () => _confirmDeleteAsset(context, ref, asset),
                     );
-                  }, childCount: portfolioState.assets.length),
+                  }, childCount: limitedAssets.length),
                 ),
               ),
 
@@ -367,9 +424,9 @@ class DashboardScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Hapus Aset'),
+        title: const Text('Jual Aset'),
         content: Text(
-          'Hapus transaksi ${asset.brand} ${asset.metalType.displayName}?',
+          'Jual transaksi ${asset.brand} ${asset.metalType.displayName}?',
         ),
         actions: [
           TextButton(
@@ -379,7 +436,7 @@ class DashboardScreen extends ConsumerWidget {
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: const Text(
-              'Hapus',
+              'Jual',
               style: TextStyle(color: AppColors.error),
             ),
           ),
@@ -397,22 +454,25 @@ class DashboardScreen extends ConsumerWidget {
     final error = ref.read(portfolioProvider).error;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text(error ?? 'Aset berhasil dihapus')));
+    ).showSnackBar(SnackBar(content: Text(error ?? 'Aset berhasil dijual')));
   }
 
   Widget _buildPriceTicker(
     BuildContext context,
+    String brand,
     String label,
     double? price,
     NumberFormat format, {
     required _TickerStyle style,
     VoidCallback? onTap,
+    VoidCallback? onLongPress,
   }) {
     return Material(
       color: style.backgroundColor,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
+        onLongPress: onLongPress,
         borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -424,14 +484,25 @@ class DashboardScreen extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: TextStyle(
-                  color: style.labelColor,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                ),
+              Row(
+                children: [
+                  _buildTickerBrandLogo(brand),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: style.labelColor,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(height: 2),
               Text(
                 price != null ? format.format(price) : '---',
                 style: TextStyle(
@@ -444,6 +515,197 @@ class DashboardScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Future<void> _confirmDeleteTicker(BuildContext context, _TickerItem item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hapus Price Ticker'),
+        content: Text('Hapus ticker ${item.brand} ${item.metalType.displayName}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Hapus',
+              style: TextStyle(color: AppColors.error),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    setState(() {
+      _manualTickerItems.removeWhere(
+        (manual) =>
+            _priceKey(manual.brand, manual.metalType) ==
+            _priceKey(item.brand, item.metalType),
+      );
+    });
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Ticker berhasil dihapus')));
+  }
+
+  Widget _buildTickerBrandLogo(String brand) {
+    final logoPath = _brandLogoPath(brand);
+    if (logoPath == null) {
+      return const Icon(
+        Icons.business,
+        size: 14,
+        color: AppColors.textSecondary,
+      );
+    }
+
+    return SizedBox(
+      width: 14,
+      height: 14,
+      child: SvgPicture.asset(
+        logoPath,
+        fit: BoxFit.contain,
+      ),
+    );
+  }
+
+  String? _brandLogoPath(String brand) {
+    final normalized = brand.trim().toLowerCase();
+    switch (normalized) {
+      case 'antam':
+        return 'assets/images/antam-logo.svg';
+      case 'ubs':
+        return 'assets/images/ubs-logo.svg';
+      case 'emasku':
+        return 'assets/images/emasku-logo.svg';
+      case 'galeri 24':
+      case 'galeri24':
+        return 'assets/images/galeri24.svg';
+      case 'bsi':
+        return 'assets/images/bsi-logo.svg';
+      default:
+        return null;
+    }
+  }
+
+  Widget _buildAddTickerButton(
+    BuildContext context, {
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.secondary.withValues(alpha: 0.3),
+            ),
+          ),
+          child: const Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.add, color: AppColors.secondary),
+              SizedBox(height: 4),
+              Text(
+                'Tambah',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.secondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<_TickerItem?> _showAddTickerDialog(BuildContext context) async {
+    final formKey = GlobalKey<FormState>();
+    final brandController = TextEditingController();
+    var metalType = MetalType.gold;
+
+    return showDialog<_TickerItem>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Tambah Price Ticker'),
+              content: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: brandController,
+                      decoration: const InputDecoration(
+                        labelText: 'Brand (contoh: UBS)',
+                      ),
+                      textCapitalization: TextCapitalization.words,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Brand wajib diisi';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<MetalType>(
+                      initialValue: metalType,
+                      decoration: const InputDecoration(
+                        labelText: 'Jenis Logam',
+                      ),
+                      items: MetalType.values
+                          .map(
+                            (type) => DropdownMenuItem(
+                              value: type,
+                              child: Text(type.displayName),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setDialogState(() => metalType = value);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Batal'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (!formKey.currentState!.validate()) return;
+                    Navigator.pop(
+                      dialogContext,
+                      _TickerItem(
+                        brand: brandController.text.trim(),
+                        metalType: metalType,
+                      ),
+                    );
+                  },
+                  child: const Text('Tambah'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -570,6 +832,8 @@ class DashboardScreen extends ConsumerWidget {
                       if (!dialogContext.mounted) return;
 
                       if (isSuccess) {
+                        await ref.read(portfolioProvider.notifier).loadPortfolio();
+                        if (!dialogContext.mounted) return;
                         Navigator.pop(dialogContext, true);
                         return;
                       }
@@ -718,7 +982,7 @@ class DashboardScreen extends ConsumerWidget {
     BuildContext context,
     String label,
     String value,
-    IconData icon,
+    String iconAsset,
     Color color,
   ) {
     return Expanded(
@@ -732,20 +996,108 @@ class DashboardScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: color, size: 20),
+            Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: SvgPicture.asset(
+                    iconAsset,
+                    fit: BoxFit.contain,
+                    placeholderBuilder: (context) => Icon(
+                      Icons.image_outlined,
+                      size: 20,
+                      color: color,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
             Text(
               value,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
-            Text(
-              label,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 12,
-              ),
-            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnalyticsMenu(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const AnalyticsDashboardScreen(),
+          ),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.grey.shade100),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.secondary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.pie_chart_outline,
+                  color: AppColors.secondary,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Analytics Dashboard',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        color: AppColors.textBody,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Statistik, komposisi, dan performa portofolio',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 14,
+                color: AppColors.textSecondary,
+              ),
+            ],
+          ),
         ),
       ),
     );

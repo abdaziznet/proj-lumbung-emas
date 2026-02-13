@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Configuration for Google Service Account credentials
@@ -26,7 +27,7 @@ class ServiceAccountConfig {
         return _loadFromBase64(base64Json);
       }
     } catch (e) {
-      print('Error loading credentials: $e');
+      debugPrint('Error loading credentials: $e');
     }
     return null;
   }
@@ -124,15 +125,15 @@ class ServiceAccountConfig {
   /// Print configuration info (for debugging, without sensitive data)
   static Future<void> printInfo() async {
     if (!await isConfigured()) {
-      print('Service Account: Not configured');
+      debugPrint('Service Account: Not configured');
       return;
     }
 
-    print('=== Service Account Configuration ===');
-    print('Project ID: ${await getProjectId()}');
-    print('Client Email: ${await getClientEmail()}');
-    print('Private Key ID: ${(await getPrivateKeyId())?.substring(0, 10)}...');
-    print('Valid: ${await validate()}');
-    print('====================================');
+    debugPrint('=== Service Account Configuration ===');
+    debugPrint('Project ID: ${await getProjectId()}');
+    debugPrint('Client Email: ${await getClientEmail()}');
+    debugPrint('Private Key ID: ${(await getPrivateKeyId())?.substring(0, 10)}...');
+    debugPrint('Valid: ${await validate()}');
+    debugPrint('====================================');
   }
 }

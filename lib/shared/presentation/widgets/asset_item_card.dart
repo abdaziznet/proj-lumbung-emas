@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:lumbungemas/core/theme/app_colors.dart';
 import 'package:lumbungemas/features/portfolio/domain/entities/metal_asset.dart';
@@ -44,16 +45,7 @@ class AssetItemCard extends StatelessWidget {
                       : Colors.blueGrey.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Center(
-                  child: Icon(
-                    asset.metalType.apiValue == 'GOLD'
-                        ? Icons.workspace_premium
-                        : Icons.circle,
-                    color: asset.metalType.apiValue == 'GOLD'
-                        ? AppColors.primary
-                        : Colors.blueGrey,
-                  ),
-                ),
+                child: _buildBrandLogo(),
               ),
               const SizedBox(width: 16),
 
@@ -128,7 +120,7 @@ class AssetItemCard extends StatelessWidget {
                     if (onDelete != null)
                       const PopupMenuItem<String>(
                         value: 'delete',
-                        child: Text('Delete'),
+                        child: Text('Jual'),
                       ),
                   ],
                 ),
@@ -146,5 +138,48 @@ class AssetItemCard extends StatelessWidget {
 
     final text = value.toStringAsFixed(2);
     return text.replaceFirst(RegExp(r'\.?0+$'), '');
+  }
+
+  Widget _buildBrandLogo() {
+    final logoPath = _brandLogoPath(asset.brand);
+    if (logoPath == null) {
+      return Center(
+        child: Icon(
+          asset.metalType.apiValue == 'GOLD'
+              ? Icons.workspace_premium
+              : Icons.circle,
+          color: asset.metalType.apiValue == 'GOLD'
+              ? AppColors.primary
+              : Colors.blueGrey,
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: SvgPicture.asset(
+        logoPath,
+        fit: BoxFit.contain,
+      ),
+    );
+  }
+
+  String? _brandLogoPath(String brand) {
+    final normalized = brand.trim().toLowerCase();
+    switch (normalized) {
+      case 'antam':
+        return 'assets/images/antam-logo.svg';
+      case 'ubs':
+        return 'assets/images/ubs-logo.svg';
+      case 'emasku':
+        return 'assets/images/emasku-logo.svg';
+      case 'galeri 24':
+      case 'galeri24':
+        return 'assets/images/galeri24.svg';
+      case 'bsi':
+        return 'assets/images/bsi-logo.svg';
+      default:
+        return null;
+    }
   }
 }

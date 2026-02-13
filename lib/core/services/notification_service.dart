@@ -1,5 +1,4 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:lumbungemas/core/constants/app_constants.dart';
 
 class NotificationService {
@@ -7,13 +6,12 @@ class NotificationService {
 
   static final NotificationService instance = NotificationService._();
 
-  static const String _priceReminderLastShownKey =
-      'price_reminder_last_shown_date';
   static const int _priceReminderNotificationId = 10001;
 
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
   bool _initialized = false;
+  DateTime? _lastShownAt;
 
   Future<void> initialize() async {
     if (_initialized) return;
@@ -65,10 +63,13 @@ class NotificationService {
   Future<void> showPriceUpdateReminderIfNeeded() async {
     await initialize();
 
-    final prefs = await SharedPreferences.getInstance();
-    final today = _todayKey();
-    final lastShown = prefs.getString(_priceReminderLastShownKey);
-    if (lastShown == today) return;
+    // Avoid duplicate notifications from multiple login callbacks
+    // firing almost at the same time.
+    final now = DateTime.now();
+    if (_lastShownAt != null &&
+        now.difference(_lastShownAt!).inSeconds < 10) {
+      return;
+    }
 
     await _plugin.show(
       _priceReminderNotificationId,
@@ -86,11 +87,6 @@ class NotificationService {
       ),
     );
 
-    await prefs.setString(_priceReminderLastShownKey, today);
-  }
-
-  String _todayKey() {
-    final now = DateTime.now();
-    return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    _lastShownAt = now;
   }
 }

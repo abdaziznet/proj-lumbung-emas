@@ -14,23 +14,23 @@ void main() async {
   try {
     // Load environment variables
     await dotenv.load(fileName: '.env');
-    print('✅ Environment variables loaded');
+    debugPrint('✅ Environment variables loaded');
 
     // Validate configuration
     AppConfig.validate();
-    print('✅ Configuration validated');
+    debugPrint('✅ Configuration validated');
 
     // Initialize Firebase
     await Firebase.initializeApp();
-    print('✅ Firebase initialized');
+    debugPrint('✅ Firebase initialized');
 
     // Initialize local notifications
     await NotificationService.instance.initialize();
-    print('✅ Notification service initialized');
+    debugPrint('✅ Notification service initialized');
 
     runApp(const ProviderScope(child: LumbungEmasApp()));
   } catch (e) {
-    print('❌ Initialization error: $e');
+    debugPrint('❌ Initialization error: $e');
     runApp(ErrorApp(error: e.toString()));
   }
 }
@@ -53,7 +53,7 @@ class MyApp extends StatelessWidget {
 }
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -214,7 +214,7 @@ class HomeScreen extends StatelessWidget {
 class ErrorApp extends StatelessWidget {
   final String error;
 
-  const ErrorApp({Key? key, required this.error}) : super(key: key);
+  const ErrorApp({super.key, required this.error});
 
   @override
   Widget build(BuildContext context) {
