@@ -77,7 +77,7 @@ class _TestSheetsConnectionScreenState
         }
         
         // Check for required sheets
-        final requiredSheets = ['Users', 'Transactions', 'Daily_Prices', 'Portfolio_Summary'];
+        final requiredSheets = ['Transactions', 'Daily_Prices', 'Portfolio_Summary'];
         final missingSheets = requiredSheets.where((name) => !sheetNames.contains(name)).toList();
         
         if (missingSheets.isNotEmpty) {
@@ -98,14 +98,7 @@ class _TestSheetsConnectionScreenState
       _addLog('');
       _addLog('📊 Step 4: Testing data access...');
 
-      // Test read from Users sheet
-      try {
-        final usersData = await sheetsService.read('Users!A1:F1');
-        _addLog('✅ Users sheet accessible');
-        _addLog('   Headers: ${usersData.isNotEmpty ? usersData[0].length : 0} columns');
-      } catch (e) {
-        _addLog('❌ Users sheet error: $e');
-      }
+      // Users sheet removed (not used)
 
       // Test read from Transactions sheet
       try {
