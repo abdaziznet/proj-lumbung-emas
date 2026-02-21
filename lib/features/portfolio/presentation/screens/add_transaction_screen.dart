@@ -9,6 +9,7 @@ import 'package:lumbungemas/core/utils/validators.dart';
 import 'package:lumbungemas/features/auth/presentation/providers/auth_provider.dart';
 import 'package:lumbungemas/features/portfolio/domain/entities/metal_asset.dart';
 import 'package:lumbungemas/features/portfolio/presentation/providers/portfolio_provider.dart';
+import 'package:lumbungemas/features/pricing/presentation/providers/pricing_provider.dart';
 import 'package:uuid/uuid.dart';
 
 class AddTransactionScreen extends ConsumerStatefulWidget {
@@ -135,6 +136,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   Widget build(BuildContext context) {
     final isLoading = ref.watch(portfolioProvider).isLoading;
     final isEditMode = widget.editingAsset != null;
+    final pricingState = ref.watch(pricingProvider);
+    final brandOptions = _buildBrandOptions(pricingState, _selectedBrand);
 
     return Scaffold(
       appBar: AppBar(
@@ -175,7 +178,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: _selectedBrand,
-                items: AppConstants.supportedBrands
+                items: brandOptions
                     .map(
                       (b) => DropdownMenuItem(
                         value: b,
@@ -183,7 +186,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                       ),
                     )
                     .toList(),
-                selectedItemBuilder: (context) => AppConstants.supportedBrands
+                selectedItemBuilder: (context) => brandOptions
                     .map((b) => _buildBrandOption(b))
                     .toList(),
                 onChanged: (val) => setState(() => _selectedBrand = val!),
@@ -372,8 +375,28 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       case 'bsi':
         return 'assets/images/bsi-logo.svg';
       default:
-        return null;
+        return 'assets/icons/gold.svg';
     }
+  }
+
+  List<String> _buildBrandOptions(
+    PricingState pricingState,
+    String selectedBrand,
+  ) {
+    final unique = <String, String>{};
+    for (final brand in AppConstants.supportedBrands) {
+      unique[brand.trim().toLowerCase()] = brand;
+    }
+    for (final price in pricingState.prices) {
+      final brand = price.brand.trim();
+      if (brand.isEmpty) continue;
+      unique.putIfAbsent(brand.toLowerCase(), () => brand);
+    }
+    final selected = selectedBrand.trim();
+    if (selected.isNotEmpty) {
+      unique.putIfAbsent(selected.toLowerCase(), () => selected);
+    }
+    return unique.values.toList();
   }
 }
 

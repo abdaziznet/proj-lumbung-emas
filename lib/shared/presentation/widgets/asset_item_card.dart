@@ -142,23 +142,10 @@ class AssetItemCard extends StatelessWidget {
 
   Widget _buildBrandLogo() {
     final logoPath = _brandLogoPath(asset.brand);
-    if (logoPath == null) {
-      return Center(
-        child: Icon(
-          asset.metalType.apiValue == 'GOLD'
-              ? Icons.workspace_premium
-              : Icons.circle,
-          color: asset.metalType.apiValue == 'GOLD'
-              ? AppColors.primary
-              : Colors.blueGrey,
-        ),
-      );
-    }
-
     return Padding(
       padding: const EdgeInsets.all(8),
       child: SvgPicture.asset(
-        logoPath,
+        logoPath ?? 'assets/icons/gold.svg',
         fit: BoxFit.contain,
       ),
     );
@@ -179,7 +166,7 @@ class AssetItemCard extends StatelessWidget {
       case 'bsi':
         return 'assets/images/bsi-logo.svg';
       default:
-        return null;
+        return 'assets/icons/gold.svg';
     }
   }
 }

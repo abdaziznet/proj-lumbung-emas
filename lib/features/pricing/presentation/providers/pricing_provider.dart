@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lumbungemas/core/constants/app_constants.dart';
 import 'package:lumbungemas/features/pricing/domain/entities/daily_price.dart';
+import 'package:lumbungemas/features/pricing/domain/usecases/delete_price.dart';
 import 'package:lumbungemas/features/pricing/domain/usecases/get_current_prices.dart';
 import 'package:lumbungemas/features/pricing/domain/usecases/update_price.dart';
 import 'package:lumbungemas/shared/data/providers/dependency_injection.dart';
@@ -129,6 +130,47 @@ class PricingNotifier extends StateNotifier<PricingState> {
       state = state.copyWith(
         isLoading: false,
         error: 'Gagal menyimpan harga: $e',
+      );
+      return false;
+    }
+  }
+
+  Future<bool> deletePrice({
+    required String brand,
+    required MetalType metalType,
+  }) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      final sheetsService = _ref.read(googleSheetsServiceProvider);
+      if (!sheetsService.isInitialized) {
+        await sheetsService.authenticateWithServiceAccount();
+      }
+
+      final deletePriceUseCase = DeletePriceUseCase(
+        _ref.read(pricingRepositoryProvider),
+      );
+
+      final result = await deletePriceUseCase(
+        brand: brand,
+        metalType: metalType.apiValue,
+      );
+
+      var isSuccess = false;
+      result.fold(
+        (failure) => state = state.copyWith(isLoading: false, error: failure.message),
+        (_) => isSuccess = true,
+      );
+
+      if (isSuccess) {
+        await loadPrices();
+      }
+
+      return isSuccess;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Gagal menghapus harga: $e',
       );
       return false;
     }

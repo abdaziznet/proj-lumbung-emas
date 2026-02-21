@@ -75,4 +75,20 @@ class PricingRepositoryImpl implements PricingRepository {
       return Left(SheetsFailure(message: e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, void>> deletePrice({
+    required String brand,
+    required String metalType,
+  }) async {
+    try {
+      await _remoteDataSource.deletePrice(
+        brand: brand,
+        metalType: metalType,
+      );
+      return const Right(null);
+    } catch (e) {
+      return Left(SheetsFailure(message: e.toString()));
+    }
+  }
 }

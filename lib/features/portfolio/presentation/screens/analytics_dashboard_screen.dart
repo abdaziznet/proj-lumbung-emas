@@ -54,6 +54,16 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
         ifAbsent: () => (asset.profitLoss ?? 0),
       );
     }
+                    final brandCounts = <String, int>{};
+                    for (final asset in assets) {
+                      brandCounts.update(asset.brand, (value) => value + 1, ifAbsent: () => 1);
+                    }
+    final brandCountEntries = brandCounts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final totalBrandCount = brandCountEntries.fold<int>(
+      0,
+      (sum, entry) => sum + entry.value,
+    );
     final perfEntries = brandPerformance.entries.toList()
       ..sort((a, b) => b.value.abs().compareTo(a.value.abs()));
     final topPerfEntries = perfEntries.take(6).toList();
@@ -164,6 +174,51 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
                                       value: _percentLabel(silverValue, totalValue),
                                     ),
                                   ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      _CardSection(
+                        title: 'Jumlah Aset per Brand',
+                        subtitle: 'Jumlah transaksi yang dimiliki per brand',
+                        child: SizedBox(
+                          height: 260,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: PieChart(
+                                  PieChartData(
+                                    sectionsSpace: 2,
+                                    centerSpaceRadius: 42,
+                                    sections: _buildBrandPieSections(
+                                      entries: brandCountEntries,
+                                      total: totalBrandCount,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              SizedBox(
+                                width: 140,
+                                child: ListView.separated(
+                                  shrinkWrap: true,
+                                  itemCount: brandCountEntries.length,
+                                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                                  itemBuilder: (context, index) {
+                                    final entry = brandCountEntries[index];
+                                    final color = _brandPieColor(index);
+                                    final percent = totalBrandCount == 0
+                                        ? '0%'
+                                        : '${((entry.value / totalBrandCount) * 100).toStringAsFixed(1)}%';
+                                    return _LegendItem(
+                                      color: color,
+                                      label: entry.key,
+                                      value: percent,
+                                    );
+                                  },
                                 ),
                               ),
                             ],
@@ -291,6 +346,56 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
   String _percentLabel(double value, double total) {
     if (total <= 0) return '0%';
     return '${((value / total) * 100).toStringAsFixed(1)}%';
+  }
+
+  List<PieChartSectionData> _buildBrandPieSections({
+    required List<MapEntry<String, int>> entries,
+    required int total,
+  }) {
+    if (total <= 0 || entries.isEmpty) {
+      return [
+        PieChartSectionData(
+          color: const Color(0xFFE5E7EB),
+          value: 1,
+          title: '0%',
+          radius: 60,
+          titleStyle: const TextStyle(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w700,
+            fontSize: 12,
+          ),
+        ),
+      ];
+    }
+
+    return [
+      for (int i = 0; i < entries.length; i++)
+        PieChartSectionData(
+          color: _brandPieColor(i),
+          value: entries[i].value.toDouble(),
+          title: '${((entries[i].value / total) * 100).toStringAsFixed(1)}%',
+          radius: 60,
+          titleStyle: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: 11,
+          ),
+        ),
+    ];
+  }
+
+  Color _brandPieColor(int index) {
+    const palette = <Color>[
+      Color(0xFFD6A741),
+      Color(0xFF3B82F6),
+      Color(0xFF10B981),
+      Color(0xFFF59E0B),
+      Color(0xFFEC4899),
+      Color(0xFF8B5CF6),
+      Color(0xFF14B8A6),
+      Color(0xFFEF4444),
+    ];
+    return palette[index % palette.length];
   }
 }
 

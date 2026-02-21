@@ -17,4 +17,10 @@ abstract class PricingRepository {
 
   /// Update price for a brand (usually by admin/automated task)
   Future<Either<Failure, DailyPrice>> updatePrice(DailyPrice price);
+
+  /// Delete price entry for a brand and metal type
+  Future<Either<Failure, void>> deletePrice({
+    required String brand,
+    required String metalType,
+  });
 }

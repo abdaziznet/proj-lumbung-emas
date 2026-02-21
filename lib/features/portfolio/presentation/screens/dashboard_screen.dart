@@ -11,6 +11,7 @@ import 'package:lumbungemas/features/portfolio/presentation/providers/portfolio_
 import 'package:lumbungemas/features/portfolio/presentation/screens/add_transaction_screen.dart';
 import 'package:lumbungemas/features/portfolio/presentation/screens/analytics_dashboard_screen.dart';
 import 'package:lumbungemas/features/portfolio/presentation/screens/all_assets_screen.dart';
+import 'package:lumbungemas/features/pricing/domain/entities/daily_price.dart';
 import 'package:lumbungemas/features/pricing/presentation/providers/pricing_provider.dart';
 import 'package:lumbungemas/shared/presentation/widgets/asset_item_card.dart';
 import 'package:lumbungemas/shared/presentation/widgets/summary_card.dart';
@@ -54,10 +55,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       latestSellByKey[key] = price.sellPrice;
     }
 
-    final tickerItems = <_TickerItem>[
-      ..._defaultTickerItems,
-      ..._manualTickerItems,
-    ];
+    final tickerItems = _mergeTickerItems(
+      _defaultTickerItems,
+      _manualTickerItems,
+      pricingState.prices
+          .map((price) => _TickerItem(brand: price.brand, metalType: price.metalType))
+          .toList(),
+    );
 
     final currencyFormat = NumberFormat.currency(
       locale: 'id_ID',
@@ -129,16 +133,29 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
 
             // Market Price Ticker
-            const SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.fromLTRB(24, 8, 24, 8),
-                child: Text(
-                  'Buyback Hari Ini',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.secondary,
-                  ),
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+                child: Row(
+                  children: [
+                    const Text(
+                      'Buyback Hari Ini',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.secondary,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      _latestUpdateLabel(pricingState.prices),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -174,6 +191,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               );
                               return;
                             }
+
+                            final saved = await _showPriceManagementDialog(
+                              context,
+                              ref,
+                              brand: newItem.brand,
+                              metalType: newItem.metalType,
+                            );
+                            if (!saved || !context.mounted) return;
 
                             setState(() {
                               _manualTickerItems.add(newItem);
@@ -542,6 +567,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
     if (confirmed != true || !context.mounted) return;
 
+    final success = await ref.read(pricingProvider.notifier).deletePrice(
+          brand: item.brand,
+          metalType: item.metalType,
+        );
+
+    if (!context.mounted) return;
+
+    if (!success) {
+      final error = ref.read(pricingProvider).error ?? 'Gagal menghapus ticker';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error)),
+      );
+      return;
+    }
+
     setState(() {
       _manualTickerItems.removeWhere(
         (manual) =>
@@ -557,19 +597,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Widget _buildTickerBrandLogo(String brand) {
     final logoPath = _brandLogoPath(brand);
-    if (logoPath == null) {
-      return const Icon(
-        Icons.business,
-        size: 14,
-        color: AppColors.textSecondary,
-      );
-    }
-
     return SizedBox(
       width: 14,
       height: 14,
       child: SvgPicture.asset(
-        logoPath,
+        logoPath ?? 'assets/icons/gold.svg',
         fit: BoxFit.contain,
       ),
     );
@@ -590,7 +622,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       case 'bsi':
         return 'assets/images/bsi-logo.svg';
       default:
-        return null;
+        return 'assets/icons/gold.svg';
     }
   }
 
@@ -709,7 +741,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Future<void> _showPriceManagementDialog(
+  Future<bool> _showPriceManagementDialog(
     BuildContext context,
     WidgetRef ref, {
     required String brand,
@@ -876,13 +908,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       },
     );
 
-    if (!context.mounted) return;
+    if (!context.mounted) return false;
 
     if (saved == true) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Harga hari ini berhasil diperbarui')),
       );
     }
+    return saved == true;
   }
 
   double? _parseRupiah(String? value) {
@@ -976,6 +1009,36 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     ];
 
     return palettes[index % palettes.length];
+  }
+
+  String _latestUpdateLabel(List<DailyPrice> prices) {
+    if (prices.isEmpty) return 'Update: -';
+    final latest = prices
+        .map((p) => p.priceDate)
+        .reduce((a, b) => a.isAfter(b) ? a : b);
+    final formatted = DateFormat('dd MMM yyyy HH:mm:ss').format(latest);
+    return 'Update: $formatted';
+  }
+
+  List<_TickerItem> _mergeTickerItems(
+    List<_TickerItem> defaults,
+    List<_TickerItem> manual,
+    List<_TickerItem> fromPrices,
+  ) {
+    final merged = <_TickerItem>[
+      ...defaults,
+      ...manual,
+      ...fromPrices,
+    ];
+    final seen = <String>{};
+    final result = <_TickerItem>[];
+    for (final item in merged) {
+      final key = _priceKey(item.brand, item.metalType);
+      if (seen.add(key)) {
+        result.add(item);
+      }
+    }
+    return result;
   }
 
   Widget _buildQuickStat(
