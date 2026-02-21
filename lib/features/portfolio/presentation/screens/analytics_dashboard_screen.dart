@@ -206,7 +206,8 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
                                 child: ListView.separated(
                                   shrinkWrap: true,
                                   itemCount: brandCountEntries.length,
-                                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                                  separatorBuilder: (context, index) =>
+                                      const SizedBox(height: 8),
                                   itemBuilder: (context, index) {
                                     final entry = brandCountEntries[index];
                                     final color = _brandPieColor(index);
