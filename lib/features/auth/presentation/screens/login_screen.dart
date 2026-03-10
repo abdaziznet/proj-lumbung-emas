@@ -63,7 +63,7 @@ class LoginScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Investasi Emas & Perak dengan Bijak',
+                  'Kelola & Pantau Portofolio Emas Anda',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -80,7 +80,7 @@ class LoginScreen extends ConsumerWidget {
                     child: Column(
                       children: [
                         Text(
-                          'Mulai Perjalanan Investasimu',
+                          'Mulai Kelola Investasi Emasmu',
                           style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(fontWeight: FontWeight.bold),
                         ),

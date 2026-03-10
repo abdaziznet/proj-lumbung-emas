@@ -93,7 +93,7 @@ class HomeScreen extends StatelessWidget {
 
               // Subtitle
               const Text(
-                'Aplikasi Manajemen Investasi Emas & Perak',
+                'Pantau Keuntungan Aset Emas Anda dengan Mudah',
                 style: TextStyle(fontSize: 16, color: Colors.grey),
                 textAlign: TextAlign.center,
               ),

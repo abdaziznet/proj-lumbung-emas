@@ -25,25 +25,35 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
       0,
       (sum, item) => sum + (item.currentMarketValue ?? item.totalPurchaseValue),
     );
-    final totalInvested =
-        assets.fold<double>(0, (sum, item) => sum + item.totalPurchaseValue);
-    final totalProfit =
-        assets.fold<double>(0, (sum, item) => sum + (item.profitLoss ?? 0));
+    final totalInvested = assets.fold<double>(
+      0,
+      (sum, item) => sum + item.totalPurchaseValue,
+    );
+    final totalProfit = assets.fold<double>(
+      0,
+      (sum, item) => sum + (item.profitLoss ?? 0),
+    );
     final profitableCount = assets.where((a) => (a.profitLoss ?? 0) > 0).length;
-    final winRate = assets.isEmpty ? 0 : (profitableCount / assets.length) * 100;
-    final returnPct = totalInvested <= 0 ? 0 : (totalProfit / totalInvested) * 100;
+    final winRate = assets.isEmpty
+        ? 0
+        : (profitableCount / assets.length) * 100;
+    final returnPct = totalInvested <= 0
+        ? 0
+        : (totalProfit / totalInvested) * 100;
 
     final goldValue = assets
         .where((a) => a.metalType == MetalType.gold)
         .fold<double>(
           0,
-          (sum, item) => sum + (item.currentMarketValue ?? item.totalPurchaseValue),
+          (sum, item) =>
+              sum + (item.currentMarketValue ?? item.totalPurchaseValue),
         );
     final silverValue = assets
         .where((a) => a.metalType == MetalType.silver)
         .fold<double>(
           0,
-          (sum, item) => sum + (item.currentMarketValue ?? item.totalPurchaseValue),
+          (sum, item) =>
+              sum + (item.currentMarketValue ?? item.totalPurchaseValue),
         );
 
     final brandPerformance = <String, double>{};
@@ -54,10 +64,10 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
         ifAbsent: () => (asset.profitLoss ?? 0),
       );
     }
-                    final brandCounts = <String, int>{};
-                    for (final asset in assets) {
-                      brandCounts.update(asset.brand, (value) => value + 1, ifAbsent: () => 1);
-                    }
+    final brandCounts = <String, int>{};
+    for (final asset in assets) {
+      brandCounts.update(asset.brand, (value) => value + 1, ifAbsent: () => 1);
+    }
     final brandCountEntries = brandCounts.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     final totalBrandCount = brandCountEntries.fold<int>(
@@ -80,84 +90,113 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
         child: portfolioState.isLoading && assets.isEmpty
             ? const Center(child: CircularProgressIndicator())
             : assets.isEmpty
-                ? ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(24),
-                    children: const [
-                      SizedBox(height: 140),
-                      Center(
-                        child: Text(
-                          'Belum ada data aset untuk dianalisis.',
-                          style: TextStyle(color: AppColors.textSecondary),
-                        ),
+            ? ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(24),
+                children: const [
+                  SizedBox(height: 140),
+                  Center(
+                    child: Text(
+                      'Belum ada data aset untuk dianalisis.',
+                      style: TextStyle(color: AppColors.textSecondary),
+                    ),
+                  ),
+                ],
+              )
+            : ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+                children: [
+                  GridView.count(
+                    physics: const NeverScrollableScrollPhysics(),
+                    shrinkWrap: true,
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 1.36,
+                    children: [
+                      _StatCard(
+                        title: 'Nilai Portofolio',
+                        value: currencyFormat.format(totalValue),
+                        icon: Icons.account_balance_wallet_outlined,
+                        accent: const Color(0xFFD6A741),
+                      ),
+                      _StatCard(
+                        title: 'Total Profit/Loss',
+                        value: currencyFormat.format(totalProfit),
+                        icon: totalProfit >= 0
+                            ? Icons.trending_up
+                            : Icons.trending_down,
+                        accent: totalProfit >= 0
+                            ? const Color(0xFF18864B)
+                            : const Color(0xFFBE3C3C),
+                      ),
+                      _StatCard(
+                        title: 'Win Rate',
+                        value: '${winRate.toStringAsFixed(1)}%',
+                        icon: Icons.track_changes_outlined,
+                        accent: const Color(0xFF3B82F6),
+                      ),
+                      _StatCard(
+                        title: 'Return',
+                        value: '${returnPct.toStringAsFixed(2)}%',
+                        icon: Icons.insights_outlined,
+                        accent: const Color(0xFF8B5CF6),
                       ),
                     ],
-                  )
-                : ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-                    children: [
-                      GridView.count(
-                        physics: const NeverScrollableScrollPhysics(),
-                        shrinkWrap: true,
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        childAspectRatio: 1.36,
-                        children: [
-                          _StatCard(
-                            title: 'Nilai Portofolio',
-                            value: currencyFormat.format(totalValue),
-                            icon: Icons.account_balance_wallet_outlined,
-                            accent: const Color(0xFFD6A741),
-                          ),
-                          _StatCard(
-                            title: 'Total Profit/Loss',
-                            value: currencyFormat.format(totalProfit),
-                            icon: totalProfit >= 0
-                                ? Icons.trending_up
-                                : Icons.trending_down,
-                            accent: totalProfit >= 0
-                                ? const Color(0xFF18864B)
-                                : const Color(0xFFBE3C3C),
-                          ),
-                          _StatCard(
-                            title: 'Win Rate',
-                            value: '${winRate.toStringAsFixed(1)}%',
-                            icon: Icons.track_changes_outlined,
-                            accent: const Color(0xFF3B82F6),
-                          ),
-                          _StatCard(
-                            title: 'Return',
-                            value: '${returnPct.toStringAsFixed(2)}%',
-                            icon: Icons.insights_outlined,
-                            accent: const Color(0xFF8B5CF6),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 18),
-                      _CardSection(
-                        title: 'Komposisi Portofolio',
-                        subtitle: 'Distribusi nilai pasar berdasarkan jenis logam',
-                        child: SizedBox(
-                          height: 250,
+                  ),
+                  const SizedBox(height: 18),
+                  _CardSection(
+                    title: 'Komposisi Portofolio',
+                    subtitle: 'Distribusi nilai pasar berdasarkan jenis logam',
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final screenWidth = constraints.maxWidth;
+                        final isSmallScreen = screenWidth < 400;
+                        final isMediumScreen =
+                            screenWidth >= 400 && screenWidth < 600;
+
+                        final chartHeight = isSmallScreen
+                            ? 220
+                            : isMediumScreen
+                            ? 250
+                            : 280;
+                        final chartRadius = isSmallScreen
+                            ? 35
+                            : isMediumScreen
+                            ? 42
+                            : 50;
+                        final legendWidth = isSmallScreen
+                            ? screenWidth * 0.35
+                            : isMediumScreen
+                            ? screenWidth * 0.4
+                            : screenWidth * 0.4;
+                        final fontSize = isSmallScreen
+                            ? 10.0
+                            : isMediumScreen
+                            ? 11.0
+                            : 12.0;
+
+                        return SizedBox(
+                          height: chartHeight.toDouble(),
                           child: Row(
                             children: [
                               Expanded(
                                 child: PieChart(
                                   PieChartData(
                                     sectionsSpace: 2,
-                                    centerSpaceRadius: 42,
+                                    centerSpaceRadius: chartRadius.toDouble(),
                                     sections: _buildPieSections(
                                       goldValue: goldValue,
                                       silverValue: silverValue,
+                                      fontSize: fontSize,
                                     ),
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 10),
+                              SizedBox(width: isSmallScreen ? 8 : 12),
                               SizedBox(
-                                width: 120,
+                                width: legendWidth,
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,44 +204,84 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
                                     _LegendItem(
                                       color: const Color(0xFFD6A741),
                                       label: 'Gold',
-                                      value: _percentLabel(goldValue, totalValue),
+                                      value: _percentLabel(
+                                        goldValue,
+                                        totalValue,
+                                      ),
+                                      fontSize: fontSize,
                                     ),
-                                    const SizedBox(height: 10),
+                                    SizedBox(height: isSmallScreen ? 8 : 10),
                                     _LegendItem(
                                       color: const Color(0xFF93A3B8),
                                       label: 'Silver',
-                                      value: _percentLabel(silverValue, totalValue),
+                                      value: _percentLabel(
+                                        silverValue,
+                                        totalValue,
+                                      ),
+                                      fontSize: fontSize,
                                     ),
                                   ],
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      _CardSection(
-                        title: 'Jumlah Aset per Brand',
-                        subtitle: 'Jumlah transaksi yang dimiliki per brand',
-                        child: SizedBox(
-                          height: 260,
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  _CardSection(
+                    title: 'Jumlah Aset per Brand',
+                    subtitle: 'Jumlah transaksi yang dimiliki per brand',
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final screenWidth = constraints.maxWidth;
+                        final isSmallScreen = screenWidth < 400;
+                        final isMediumScreen =
+                            screenWidth >= 400 && screenWidth < 600;
+
+                        final chartHeight = isSmallScreen
+                            ? 240
+                            : isMediumScreen
+                            ? 280
+                            : 300;
+                        final chartRadius = isSmallScreen
+                            ? 35
+                            : isMediumScreen
+                            ? 42
+                            : 50;
+                        final fontSize = isSmallScreen
+                            ? 10.0
+                            : isMediumScreen
+                            ? 11.0
+                            : 12.0;
+                        final legendWidth = isSmallScreen
+                            ? screenWidth * 0.35
+                            : isMediumScreen
+                            ? screenWidth * 0.4
+                            : screenWidth * 0.45;
+
+                        return SizedBox(
+                          height: chartHeight.toDouble(),
                           child: Row(
                             children: [
                               Expanded(
+                                flex: 4,
                                 child: PieChart(
                                   PieChartData(
                                     sectionsSpace: 2,
-                                    centerSpaceRadius: 42,
+                                    centerSpaceRadius: chartRadius.toDouble(),
                                     sections: _buildBrandPieSections(
                                       entries: brandCountEntries,
                                       total: totalBrandCount,
+                                      fontSize: fontSize,
                                     ),
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 10),
+                              SizedBox(width: isSmallScreen ? 8 : 12),
                               SizedBox(
-                                width: 140,
+                                width: legendWidth,
                                 child: ListView.separated(
                                   shrinkWrap: true,
                                   itemCount: brandCountEntries.length,
@@ -218,20 +297,46 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
                                       color: color,
                                       label: entry.key,
                                       value: percent,
+                                      fontSize: fontSize,
                                     );
                                   },
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      _CardSection(
-                        title: 'Performa per Brand',
-                        subtitle: 'Akumulasi profit/loss per brand',
-                        child: SizedBox(
-                          height: 280,
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  _CardSection(
+                    title: 'Performa per Brand',
+                    subtitle: 'Akumulasi profit/loss per brand',
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final screenWidth = constraints.maxWidth;
+                        final isSmallScreen = screenWidth < 400;
+                        final isMediumScreen =
+                            screenWidth >= 400 && screenWidth < 600;
+
+                        final chartHeight = isSmallScreen
+                            ? 240
+                            : isMediumScreen
+                            ? 280
+                            : 320;
+                        final titleFontSize = isSmallScreen
+                            ? 9.0
+                            : isMediumScreen
+                            ? 10.0
+                            : 11.0;
+                        final barWidth = isSmallScreen
+                            ? 12.0
+                            : isMediumScreen
+                            ? 16.0
+                            : 18.0;
+
+                        return SizedBox(
+                          height: chartHeight.toDouble(),
                           child: BarChart(
                             BarChartData(
                               alignment: BarChartAlignment.spaceAround,
@@ -252,18 +357,31 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
                                     showTitles: true,
                                     getTitlesWidget: (value, meta) {
                                       final idx = value.toInt();
-                                      if (idx < 0 || idx >= topPerfEntries.length) {
+                                      if (idx < 0 ||
+                                          idx >= topPerfEntries.length) {
                                         return const SizedBox.shrink();
                                       }
                                       final brand = topPerfEntries[idx].key;
                                       return Padding(
                                         padding: const EdgeInsets.only(top: 8),
-                                        child: Text(
-                                          brand,
-                                          style: const TextStyle(
-                                            fontSize: 10,
-                                            color: AppColors.textSecondary,
-                                            fontWeight: FontWeight.w600,
+                                        child: Container(
+                                          constraints: BoxConstraints(
+                                            maxWidth: isSmallScreen
+                                                ? 35
+                                                : isMediumScreen
+                                                ? 45
+                                                : 55,
+                                          ),
+                                          child: Text(
+                                            brand,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              fontSize: titleFontSize,
+                                              color: AppColors.textSecondary,
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                           ),
                                         ),
                                       );
@@ -278,7 +396,7 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
                                     barRods: [
                                       BarChartRodData(
                                         toY: topPerfEntries[i].value,
-                                        width: 18,
+                                        width: barWidth,
                                         borderRadius: BorderRadius.circular(6),
                                         color: topPerfEntries[i].value >= 0
                                             ? const Color(0xFF18864B)
@@ -289,10 +407,12 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
                               ],
                             ),
                           ),
-                        ),
-                      ),
-                    ],
+                        );
+                      },
+                    ),
                   ),
+                ],
+              ),
       ),
     );
   }
@@ -300,6 +420,7 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
   List<PieChartSectionData> _buildPieSections({
     required double goldValue,
     required double silverValue,
+    double fontSize = 12,
   }) {
     final total = goldValue + silverValue;
     if (total <= 0) {
@@ -324,10 +445,10 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
         value: goldValue,
         title: '${((goldValue / total) * 100).toStringAsFixed(1)}%',
         radius: 60,
-        titleStyle: const TextStyle(
+        titleStyle: TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.w700,
-          fontSize: 12,
+          fontSize: fontSize,
         ),
       ),
       PieChartSectionData(
@@ -335,10 +456,10 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
         value: silverValue,
         title: '${((silverValue / total) * 100).toStringAsFixed(1)}%',
         radius: 60,
-        titleStyle: const TextStyle(
+        titleStyle: TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.w700,
-          fontSize: 12,
+          fontSize: fontSize,
         ),
       ),
     ];
@@ -352,6 +473,7 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
   List<PieChartSectionData> _buildBrandPieSections({
     required List<MapEntry<String, int>> entries,
     required int total,
+    double fontSize = 11,
   }) {
     if (total <= 0 || entries.isEmpty) {
       return [
@@ -376,10 +498,10 @@ class AnalyticsDashboardScreen extends ConsumerWidget {
           value: entries[i].value.toDouble(),
           title: '${((entries[i].value / total) * 100).toStringAsFixed(1)}%',
           radius: 60,
-          titleStyle: const TextStyle(
+          titleStyle: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w700,
-            fontSize: 11,
+            fontSize: fontSize,
           ),
         ),
     ];
@@ -503,11 +625,13 @@ class _LegendItem extends StatelessWidget {
   final Color color;
   final String label;
   final String value;
+  final double fontSize;
 
   const _LegendItem({
     required this.color,
     required this.label,
     required this.value,
+    this.fontSize = 12,
   });
 
   @override
@@ -517,26 +641,26 @@ class _LegendItem extends StatelessWidget {
         Container(
           width: 10,
           height: 10,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(
-              fontSize: 12,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: fontSize,
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w600,
             ),
           ),
         ),
+        const SizedBox(width: 4),
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 12,
+          style: TextStyle(
+            fontSize: fontSize,
             color: AppColors.textBody,
             fontWeight: FontWeight.w700,
           ),
