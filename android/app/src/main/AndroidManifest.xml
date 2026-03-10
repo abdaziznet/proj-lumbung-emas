@@ -1,9 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Internet permission required for API calls -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Notification permission for alerts -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    
     <application
         android:label="Lumbung Emasku"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:usesCleartextTraffic="false">
         <activity
             android:name=".MainActivity"
             android:exported="true"

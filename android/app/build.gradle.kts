@@ -20,7 +20,9 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
+        jvmTarget = "17"
+        // Disable incremental compilation to work around cache corruption on Windows
+        allWarningsAsErrors = false
     }
 
     defaultConfig {
@@ -39,6 +41,18 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            
+            // ============================================
+            // SECURITY: ProGuard/R8 Obfuscation
+            // Protects business logic from reverse engineering
+            // NOTE: Temporarily disabled while resolving Play Core library references
+            // ============================================
+            isMinifyEnabled = false
+            isShrinkResources = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Only allow HTTPS for all domains -->
+    <domain-config cleartextTrafficPermitted="false">
+        <!-- Firebase -->
+        <domain includeSubdomains="true">lumbungemasku.firebaseapp.com</domain>
+        <domain includeSubdomains="true">firebase.googleapis.com</domain>
+        <domain includeSubdomains="true">firebaseapp.com</domain>
+        
+        <!-- Google Services -->
+        <domain includeSubdomains="true">googleapis.com</domain>
+        <domain includeSubdomains="true">google.com</domain>
+        <domain includeSubdomains="true">sheets.googleapis.com</domain>
+        <domain includeSubdomains="true">accounts.google.com</domain>
+        
+        <!-- Notifications & Analytics -->
+        <domain includeSubdomains="true">fcm.googleapis.com</domain>
+        <domain includeSubdomains="true">google-analytics.com</domain>
+    </domain-config>
+</network-security-config>

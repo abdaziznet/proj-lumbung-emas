@@ -41,9 +41,9 @@ class AppConstants {
 
   // Validation Limits
   static const double minWeight = 0.01; // 0.01 gram
-  static const double maxWeight = 1000.0; // 1 kg
+  static const double maxWeight = 10000.0; // 10 kg
   static const double minPrice = 1000.0; // Rp 1,000
-  static const double maxPrice = 100000000.0; // Rp 100 million
+  static const double maxPrice = 1000000000000.0; // Rp 1 trillion
 
   // Google Sheets - Loaded from environment variables
   // Configure in .env file: GOOGLE_SHEETS_SPREADSHEET_ID=your_id

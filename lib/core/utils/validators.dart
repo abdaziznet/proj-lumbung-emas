@@ -74,7 +74,11 @@ class Validators {
   }
 
   /// Validate minimum length
-  static String? minLength(String? value, int min, {String fieldName = 'This field'}) {
+  static String? minLength(
+    String? value,
+    int min, {
+    String fieldName = 'This field',
+  }) {
     if (value == null || value.isEmpty) {
       return '$fieldName is required';
     }
@@ -87,7 +91,11 @@ class Validators {
   }
 
   /// Validate maximum length
-  static String? maxLength(String? value, int max, {String fieldName = 'This field'}) {
+  static String? maxLength(
+    String? value,
+    int max, {
+    String fieldName = 'This field',
+  }) {
     if (value != null && value.length > max) {
       return '$fieldName cannot exceed $max characters';
     }
@@ -139,7 +147,9 @@ class Validators {
   }
 
   /// Combine multiple validators
-  static String? Function(String?) combine(List<String? Function(String?)> validators) {
+  static String? Function(String?) combine(
+    List<String? Function(String?)> validators,
+  ) {
     return (String? value) {
       for (final validator in validators) {
         final result = validator(value);
@@ -149,5 +159,139 @@ class Validators {
       }
       return null;
     };
+  }
+
+  // ============================================
+  // SECURITY VALIDATORS - INDONESIAN
+  // ============================================
+
+  /// Validate brand name (Indonesian) - prevent injection
+  static String? validateBrand(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Brand tidak boleh kosong';
+    }
+    final trimmed = value.trim();
+    if (trimmed.length < 2 || trimmed.length > 50) {
+      return 'Brand harus 2-50 karakter';
+    }
+    // Only alphanumeric, spaces, hyphens
+    if (!RegExp(r'^[a-zA-Z0-9\s\-]+$').hasMatch(trimmed)) {
+      return 'Brand hanya boleh huruf, angka, spasi, dan tanda hubung';
+    }
+    // Check for suspicious patterns
+    if (containsSuspiciousPatterns(trimmed)) {
+      return 'Format brand tidak valid';
+    }
+    return null;
+  }
+
+  /// Validate quantity (Indonesian) - for gold/silver weight
+  static String? validateQuantity(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Jumlah tidak boleh kosong';
+    }
+    final trimmed = value.trim();
+    final quantity = double.tryParse(trimmed);
+    if (quantity == null) {
+      return 'Jumlah harus berupa angka';
+    }
+    if (quantity <= 0) {
+      return 'Jumlah harus lebih besar dari 0';
+    }
+    if (quantity > 1000000) {
+      return 'Jumlah maksimal 1.000.000 gram';
+    }
+    return null;
+  }
+
+  /// Validate price (Indonesian) - for Rupiah
+  static String? validatePrice(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Harga tidak boleh kosong';
+    }
+    final trimmed = value.trim();
+    final price = double.tryParse(trimmed);
+    if (price == null) {
+      return 'Harga harus berupa angka';
+    }
+    if (price <= 0) {
+      return 'Harga harus lebih besar dari 0';
+    }
+    if (price > 1000000000) {
+      return 'Harga melebihi batas maksimal';
+    }
+    return null;
+  }
+
+  /// Validate date (Indonesian) - ensure date is not in future
+  static String? validateDate(DateTime? value) {
+    if (value == null) {
+      return 'Tanggal tidak boleh kosong';
+    }
+    if (value.isAfter(DateTime.now())) {
+      return 'Tanggal tidak boleh di masa depan';
+    }
+    // Max 100 years in past
+    if (value.isBefore(DateTime.now().subtract(const Duration(days: 36500)))) {
+      return 'Tanggal terlalu lama di masa lalu';
+    }
+    return null;
+  }
+
+  /// Check if input contains suspicious patterns (SQL injection, XSS)
+  static bool containsSuspiciousPatterns(String input) {
+    final lowerInput = input.toLowerCase();
+    const suspiciousKeywords = [
+      'drop table',
+      'insert into',
+      'delete from',
+      'update ',
+      'select ',
+      '<script',
+      'javascript:',
+      'onclick=',
+      'onerror=',
+      'onload=',
+      ';--',
+      '/*',
+      '*/',
+    ];
+
+    for (final keyword in suspiciousKeywords) {
+      if (lowerInput.contains(keyword)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// Sanitize input - basic protection against injection
+  static String sanitizeInput(String input) {
+    return input
+        .replaceAll("'", "''") // Escape single quotes
+        .replaceAll('"', '""') // Escape double quotes
+        .replaceAll(';', '') // Remove semicolons
+        .replaceAll('\n', ' ') // Remove newlines
+        .replaceAll('\r', ' ') // Remove carriage returns
+        .trim();
+  }
+
+  /// Sanitize numeric input - remove non-numeric characters
+  static String sanitizeNumeric(String input) {
+    return input.replaceAll(RegExp(r'[^0-9.]'), '').trim();
+  }
+
+  /// Validate email (Indonesian)
+  static String? emailId(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Email tidak boleh kosong';
+    }
+    final emailRegex = RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    );
+    if (!emailRegex.hasMatch(value.trim())) {
+      return 'Format email tidak valid';
+    }
+    return null;
   }
 }

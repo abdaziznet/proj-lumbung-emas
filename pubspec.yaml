@@ -2,7 +2,7 @@ name: lumbungemas
 description: "LumbungEmas - Production-ready precious metal portfolio management app"
 publish_to: 'none'
 
-version: 2026.0.7+8
+version: 2026.0.8+1
 
 environment:
   sdk: ^3.10.7
