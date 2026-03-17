@@ -24,6 +24,8 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  static const String _appVersion = 'v2026.0.8';
+
   static const List<_TickerItem> _defaultTickerItems = [
     _TickerItem(brand: 'Antam', metalType: MetalType.gold),
     _TickerItem(brand: 'UBS', metalType: MetalType.gold),
@@ -59,7 +61,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       _defaultTickerItems,
       _manualTickerItems,
       pricingState.prices
-          .map((price) => _TickerItem(brand: price.brand, metalType: price.metalType))
+          .map(
+            (price) =>
+                _TickerItem(brand: price.brand, metalType: price.metalType),
+          )
           .toList(),
     );
 
@@ -280,6 +285,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           '${_formatWeight(portfolioState.totalGoldWeight)} gram',
                           'assets/images/ic-gold.svg',
                           AppColors.primaryDark,
+                          obscureValue: _isAssetValueHidden,
                         ),
                         const SizedBox(width: 16),
                         _buildQuickStat(
@@ -288,6 +294,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           '${_formatWeight(portfolioState.totalSilverWeight)} gram',
                           'assets/images/ic-silver.svg',
                           const Color(0xFF6B7280),
+                          obscureValue: _isAssetValueHidden,
                         ),
                       ],
                     ),
@@ -384,20 +391,38 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
               ),
 
-            const SliverToBoxAdapter(child: SizedBox(height: 100)),
+            const SliverToBoxAdapter(child: SizedBox(height: 0)),
+
+            // Footer with App Version
+            SliverToBoxAdapter(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 8,
+                  horizontal: 24,
+                ),
+                child: Center(
+                  child: Text(
+                    'Lumbung Emas $_appVersion',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const AddTransactionScreen()),
         ),
         backgroundColor: AppColors.secondary,
         foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text('Tambah Transaksi'),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -460,10 +485,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Jual',
-              style: TextStyle(color: AppColors.error),
-            ),
+            child: const Text('Jual', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -543,12 +565,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Future<void> _confirmDeleteTicker(BuildContext context, _TickerItem item) async {
+  Future<void> _confirmDeleteTicker(
+    BuildContext context,
+    _TickerItem item,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Hapus Price Ticker'),
-        content: Text('Hapus ticker ${item.brand} ${item.metalType.displayName}?'),
+        content: Text(
+          'Hapus ticker ${item.brand} ${item.metalType.displayName}?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -567,18 +594,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
     if (confirmed != true || !context.mounted) return;
 
-    final success = await ref.read(pricingProvider.notifier).deletePrice(
-          brand: item.brand,
-          metalType: item.metalType,
-        );
+    final success = await ref
+        .read(pricingProvider.notifier)
+        .deletePrice(brand: item.brand, metalType: item.metalType);
 
     if (!context.mounted) return;
 
     if (!success) {
       final error = ref.read(pricingProvider).error ?? 'Gagal menghapus ticker';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error)));
       return;
     }
 
@@ -864,7 +890,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       if (!dialogContext.mounted) return;
 
                       if (isSuccess) {
-                        await ref.read(portfolioProvider.notifier).loadPortfolio();
+                        await ref
+                            .read(portfolioProvider.notifier)
+                            .loadPortfolio();
                         if (!dialogContext.mounted) return;
                         Navigator.pop(dialogContext, true);
                         return;
@@ -1025,11 +1053,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     List<_TickerItem> manual,
     List<_TickerItem> fromPrices,
   ) {
-    final merged = <_TickerItem>[
-      ...defaults,
-      ...manual,
-      ...fromPrices,
-    ];
+    final merged = <_TickerItem>[...defaults, ...manual, ...fromPrices];
     final seen = <String>{};
     final result = <_TickerItem>[];
     for (final item in merged) {
@@ -1046,8 +1070,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     String label,
     String value,
     String iconAsset,
-    Color color,
-  ) {
+    Color color, {
+    bool obscureValue = false,
+  }) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -1067,11 +1092,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   child: SvgPicture.asset(
                     iconAsset,
                     fit: BoxFit.contain,
-                    placeholderBuilder: (context) => Icon(
-                      Icons.image_outlined,
-                      size: 20,
-                      color: color,
-                    ),
+                    placeholderBuilder: (context) =>
+                        Icon(Icons.image_outlined, size: 20, color: color),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -1090,7 +1112,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              value,
+              obscureValue ? '•••••' : value,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
           ],
