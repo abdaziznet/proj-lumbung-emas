@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:lumbungemas/core/constants/app_constants.dart';
 import 'package:lumbungemas/core/theme/app_colors.dart';
 import 'package:lumbungemas/features/auth/presentation/providers/auth_provider.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:lumbungemas/features/portfolio/domain/entities/metal_asset.dart';
 import 'package:lumbungemas/features/portfolio/presentation/providers/portfolio_provider.dart';
 import 'package:lumbungemas/features/portfolio/presentation/screens/add_transaction_screen.dart';
@@ -13,6 +14,7 @@ import 'package:lumbungemas/features/portfolio/presentation/screens/analytics_da
 import 'package:lumbungemas/features/portfolio/presentation/screens/all_assets_screen.dart';
 import 'package:lumbungemas/features/pricing/domain/entities/daily_price.dart';
 import 'package:lumbungemas/features/pricing/presentation/providers/pricing_provider.dart';
+import 'package:lumbungemas/features/auth/presentation/screens/settings_screen.dart';
 import 'package:lumbungemas/shared/presentation/widgets/asset_item_card.dart';
 import 'package:lumbungemas/shared/presentation/widgets/summary_card.dart';
 
@@ -24,7 +26,7 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
-  static const String _appVersion = 'v2026.0.8';
+  String _appVersion = 'v${AppConstants.appVersion}';
 
   static const List<_TickerItem> _defaultTickerItems = [
     _TickerItem(brand: 'Antam', metalType: MetalType.gold),
@@ -39,6 +41,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   String _priceKey(String brand, MetalType metalType) {
     return '${brand.trim().toLowerCase()}_${metalType.apiValue.toLowerCase()}';
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAppVersion();
+  }
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (!mounted) return;
+      setState(() {
+        _appVersion = 'v${info.version}+${info.buildNumber}';
+      });
+    } catch (_) {
+      // Keep fallback version from AppConstants.
+    }
   }
 
   @override
@@ -124,6 +144,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ],
                       ),
                       const Spacer(),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.settings_outlined,
+                          color: AppColors.primary,
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SettingsScreen(),
+                            ),
+                          );
+                        },
+                      ),
                       IconButton(
                         icon: const Icon(
                           Icons.logout_outlined,

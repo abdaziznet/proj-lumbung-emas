@@ -2,7 +2,7 @@ name: lumbungemas
 description: "LumbungEmas - Production-ready precious metal portfolio management app"
 publish_to: 'none'
 
-version: 2026.0.8+1
+version: 2026.0.9+1
 
 environment:
   sdk: ^3.10.7
@@ -10,6 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  package_info_plus: ^8.0.2
 
   # UI & Icons
   cupertino_icons: ^1.0.8
@@ -64,6 +65,9 @@ dependencies:
 
   # Connectivity
   connectivity_plus: ^5.0.2
+
+  # Biometric Authentication
+  local_auth: ^2.3.0
 
 dev_dependencies:
   flutter_test:

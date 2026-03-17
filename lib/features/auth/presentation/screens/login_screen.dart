@@ -3,6 +3,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lumbungemas/core/theme/app_colors.dart';
 import 'package:lumbungemas/features/auth/presentation/providers/auth_provider.dart';
+import 'package:lumbungemas/features/auth/presentation/providers/biometric_provider.dart';
+import 'package:lumbungemas/features/auth/presentation/screens/biometric_setup_dialog.dart';
 
 class LoginScreen extends ConsumerWidget {
   const LoginScreen({super.key});
@@ -10,6 +12,38 @@ class LoginScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(authProvider);
+    final bioState = ref.watch(biometricProvider);
+    final shouldOfferBiometric = ref.watch(shouldOfferBiometricSetupProvider);
+
+    // Show biometric setup dialog after successful login
+    ref.listen(authProvider, (prev, next) async {
+      if (prev == null ||
+          prev.user == null ||
+          next.user == null ||
+          next.isLoading) {
+        return;
+      }
+
+      // Check if user just logged in (has session token now)
+      if (prev.user != next.user && next.sessionToken != null) {
+        ref.read(biometricProvider.notifier).markSessionUnlocked();
+
+        // Wait for biometric provider to update
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        if (context.mounted && shouldOfferBiometric) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (dialogContext) => BiometricSetupDialog(
+              onSuccess: () {
+                // Dialog closed after successful setup
+              },
+            ),
+          );
+        }
+      }
+    });
 
     return Scaffold(
       body: Container(
@@ -86,32 +120,127 @@ class LoginScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 24),
 
-                        // Google Sign In Button
-                        ElevatedButton.icon(
-                          onPressed: state.isLoading
-                              ? null
-                              : () => ref
-                                    .read(authProvider.notifier)
-                                    .signInWithGoogle(),
-                          icon: state.isLoading
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
+                        // Login buttons
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: state.isLoading
+                                    ? null
+                                    : () => ref
+                                          .read(authProvider.notifier)
+                                          .signInWithGoogle(),
+                                icon: state.isLoading
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Icon(Icons.login),
+                                label: Text(
+                                  state.isLoading
+                                      ? 'Menghubungkan...'
+                                      : 'Masuk dengan Google',
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.secondary,
+                                  foregroundColor: Colors.white,
+                                  minimumSize: const Size.fromHeight(48),
+                                ),
+                              ),
+                            ),
+                            if (bioState.isEnabled &&
+                                bioState.hasStoredSession) ...[
+                              const SizedBox(width: 12),
+                              SizedBox(
+                                height: 48,
+                                width: 56,
+                                child: ElevatedButton(
+                                  onPressed: state.isLoading ||
+                                          bioState.isAuthenticating
+                                      ? null
+                                      : () async {
+                                          final bioNotifier = ref.read(
+                                            biometricProvider.notifier,
+                                          );
+                                          final authNotifier = ref.read(
+                                            authProvider.notifier,
+                                          );
+
+                                          final isVerified = await bioNotifier
+                                              .authenticate();
+                                          if (!isVerified) {
+                                            if (context.mounted) {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    'Verifikasi biometric gagal',
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                            return;
+                                          }
+
+                                          final sessionToken = await bioNotifier
+                                              .getBiometricSessionToken();
+                                          final user =
+                                              await bioNotifier
+                                                  .getBiometricUser();
+
+                                          if (sessionToken == null ||
+                                              user == null) {
+                                            if (context.mounted) {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    'Data biometric tidak lengkap, silakan login dengan Google',
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                            return;
+                                          }
+
+                                          authNotifier.signInWithBiometric(
+                                            user,
+                                            sessionToken,
+                                          );
+                                          bioNotifier.markSessionUnlocked();
+
+                                          if (!context.mounted) return;
+                                        },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primary,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    padding: EdgeInsets.zero,
                                   ),
-                                )
-                              : const Icon(Icons.login),
-                          label: Text(
-                            state.isLoading
-                                ? 'Menghubungkan...'
-                                : 'Masuk dengan Google',
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.secondary,
-                            foregroundColor: Colors.white,
-                          ),
+                                  child: bioState.isAuthenticating
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Icons.fingerprint,
+                                          size: 26,
+                                        ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
 
                         if (state.error != null) ...[
