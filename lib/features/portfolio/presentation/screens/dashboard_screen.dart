@@ -8,6 +8,7 @@ import 'package:lumbungemas/core/theme/app_colors.dart';
 import 'package:lumbungemas/features/auth/presentation/providers/auth_provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:lumbungemas/features/portfolio/domain/entities/metal_asset.dart';
+import 'package:lumbungemas/features/portfolio/presentation/models/asset_sort_option.dart';
 import 'package:lumbungemas/features/portfolio/presentation/providers/portfolio_provider.dart';
 import 'package:lumbungemas/features/portfolio/presentation/screens/add_transaction_screen.dart';
 import 'package:lumbungemas/features/portfolio/presentation/screens/analytics_dashboard_screen.dart';
@@ -27,6 +28,7 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   String _appVersion = 'v${AppConstants.appVersion}';
+  AssetSortOption _assetSortOption = AssetSortOption.purchaseDate;
 
   static const List<_TickerItem> _defaultTickerItems = [
     _TickerItem(brand: 'Antam', metalType: MetalType.gold),
@@ -66,8 +68,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final user = ref.watch(currentUserProvider);
     final portfolioState = ref.watch(portfolioProvider);
     final pricingState = ref.watch(pricingProvider);
-    final displayedAssets = List<MetalAsset>.from(portfolioState.assets)
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final displayedAssets = _assetSortOption.sortAssets(portfolioState.assets);
     final limitedAssets = displayedAssets.take(5).toList();
     final latestPriceByKey = <String, double>{};
     final latestSellByKey = <String, double>{};
@@ -347,14 +348,71 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        TextButton(
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const AllAssetsScreen(),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            PopupMenuButton<AssetSortOption>(
+                              tooltip: 'Urutkan aset',
+                              initialValue: _assetSortOption,
+                              onSelected: (value) {
+                                setState(() {
+                                  _assetSortOption = value;
+                                });
+                              },
+                              itemBuilder: (context) => AssetSortOption.values
+                                  .map(
+                                    (option) => PopupMenuItem<AssetSortOption>(
+                                      value: option,
+                                      child: Text(option.label),
+                                    ),
+                                  )
+                                  .toList(),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(999),
+                                  border: Border.all(
+                                    color: AppColors.primary.withValues(
+                                      alpha: 0.15,
+                                    ),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.sort_rounded,
+                                      size: 18,
+                                      color: AppColors.primary,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      _assetSortOption.label,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
-                          ),
-                          child: const Text('Lihat Semua'),
+                            const SizedBox(width: 4),
+                            TextButton(
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const AllAssetsScreen(),
+                                ),
+                              ),
+                              child: const Text('Lihat Semua'),
+                            ),
+                          ],
                         ),
                       ],
                     ),

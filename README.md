@@ -147,6 +147,18 @@ lumbungemas/
    flutter run
    ```
 
+### Build Release
+
+#### Build APK (release)
+```bash
+dart run .\tool\build.dart
+```
+
+#### Build App Bundle / AAB (release)
+```bash
+flutter build appbundle --release
+```
+
 For detailed setup instructions, see [IMPLEMENTATION_GUIDE.md](IMPLEMENTATION_GUIDE.md)
 
 ---

@@ -274,8 +274,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ),
                         const SizedBox(height: 14),
                         _buildInfoRow('Email', authState.user?.email ?? '-'),
-                        const SizedBox(height: 14),
-                        _buildInfoRow('UID', authState.user?.userId ?? '-'),
                       ],
                     ),
                   ),

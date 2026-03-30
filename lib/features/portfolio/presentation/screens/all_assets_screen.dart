@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lumbungemas/core/theme/app_colors.dart';
 import 'package:lumbungemas/features/portfolio/domain/entities/metal_asset.dart';
+import 'package:lumbungemas/features/portfolio/presentation/models/asset_sort_option.dart';
 import 'package:lumbungemas/features/portfolio/presentation/providers/portfolio_provider.dart';
 import 'package:lumbungemas/features/portfolio/presentation/screens/add_transaction_screen.dart';
 import 'package:lumbungemas/shared/presentation/widgets/asset_item_card.dart';
@@ -18,12 +19,12 @@ class AllAssetsScreen extends ConsumerStatefulWidget {
 class _AllAssetsScreenState extends ConsumerState<AllAssetsScreen> {
   static const int _pageSize = 10;
   int _currentPage = 0;
+  AssetSortOption _assetSortOption = AssetSortOption.purchaseDate;
 
   @override
   Widget build(BuildContext context) {
     final portfolioState = ref.watch(portfolioProvider);
-    final sortedAssets = List<MetalAsset>.from(portfolioState.assets)
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final sortedAssets = _assetSortOption.sortAssets(portfolioState.assets);
     final totalPages = sortedAssets.isEmpty
         ? 0
         : (sortedAssets.length / _pageSize).ceil();
@@ -48,6 +49,27 @@ class _AllAssetsScreenState extends ConsumerState<AllAssetsScreen> {
         backgroundColor: Colors.white,
         foregroundColor: AppColors.secondary,
         elevation: 0,
+        actions: [
+          PopupMenuButton<AssetSortOption>(
+            tooltip: 'Urutkan aset',
+            initialValue: _assetSortOption,
+            onSelected: (value) {
+              setState(() {
+                _assetSortOption = value;
+                _currentPage = 0;
+              });
+            },
+            itemBuilder: (context) => AssetSortOption.values
+                .map(
+                  (option) => PopupMenuItem<AssetSortOption>(
+                    value: option,
+                    child: Text(option.label),
+                  ),
+                )
+                .toList(),
+            icon: const Icon(Icons.sort_rounded),
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(portfolioProvider.notifier).loadPortfolio(),
@@ -68,6 +90,19 @@ class _AllAssetsScreenState extends ConsumerState<AllAssetsScreen> {
                   )
                 : Column(
                     children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Urutan: ${_assetSortOption.label}',
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
                       Expanded(
                         child: ListView.builder(
                           physics: const AlwaysScrollableScrollPhysics(),
